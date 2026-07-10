@@ -13,6 +13,7 @@ import 'package:lystra/ui/features/lists/view_models/lists_view_model.dart';
 import 'package:lystra/ui/features/items/views/items_view.dart';
 import 'package:lystra/ui/features/items/view_models/items_view_model.dart';
 import 'package:lystra/ui/features/history/views/history_view.dart';
+import 'package:lystra/ui/features/profile/view_models/profile_view_model.dart';
 import 'package:lystra/ui/features/profile/views/profile_view.dart';
 import 'package:lystra/ui/features/shopping/views/shopping_view.dart';
 
@@ -69,7 +70,7 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/profile',
-          builder: (_, __) => const ProfileView(),
+          builder: (_, __) => ProfileView(viewModel: sl<ProfileViewModel>()),
         ),
       ],
     ),

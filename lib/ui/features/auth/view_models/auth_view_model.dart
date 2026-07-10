@@ -1,12 +1,17 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:lystra/data/repositories/auth_repository.dart';
+import 'package:lystra/data/services/seed_data_service.dart';
 
 class AuthViewModel extends ChangeNotifier {
-  AuthViewModel({required AuthRepository authRepository})
-      : _authRepository = authRepository;
+  AuthViewModel({
+    required AuthRepository authRepository,
+    required SeedDataService seedDataService,
+  })  : _authRepository = authRepository,
+        _seedDataService = seedDataService;
 
   final AuthRepository _authRepository;
+  final SeedDataService _seedDataService;
 
   bool _isLoading = false;
   bool get isLoading => _isLoading;
@@ -30,7 +35,10 @@ class AuthViewModel extends ChangeNotifier {
       String email, String password, String displayName) async {
     _setLoading(true);
     try {
-      await _authRepository.registerWithEmail(email, password, displayName);
+      final user =
+          await _authRepository.registerWithEmail(email, password, displayName);
+      // Seed base categories + items for new user (runs while loading is still true)
+      await _seedDataService.seedIfFirstTime(user.uid);
     } on FirebaseAuthException catch (e) {
       _errorMessage = _mapError(e.code);
       notifyListeners();
