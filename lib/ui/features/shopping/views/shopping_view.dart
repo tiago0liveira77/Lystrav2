@@ -77,9 +77,10 @@ class _ShoppingViewState extends State<ShoppingView> {
       isScrollControlled: true,
       useSafeArea: true,
       builder: (_) => AddToListBottomSheet(
-        availableItems: _vm.availableItems,
+        allItems: _vm.allItems,
         categories: _vm.categories,
-        onAdd: (itemId) => _vm.addItem(itemId),
+        entryFor: _vm.entryForItem,
+        onAddOrIncrement: _vm.addOrIncrement,
       ),
     );
   }

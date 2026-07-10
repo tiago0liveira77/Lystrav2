@@ -2,19 +2,23 @@ import 'package:flutter/material.dart';
 import 'package:lystra/core/theme/app_spacing.dart';
 import 'package:lystra/domain/models/category.dart';
 import 'package:lystra/domain/models/item.dart';
+import 'package:lystra/domain/models/list_entry.dart';
 import 'package:lystra/ui/core/widgets/empty_state_widget.dart';
 
 class AddToListBottomSheet extends StatefulWidget {
   const AddToListBottomSheet({
     super.key,
-    required this.availableItems,
+    required this.allItems,
     required this.categories,
-    required this.onAdd,
+    required this.entryFor,
+    required this.onAddOrIncrement,
   });
 
-  final List<Item> availableItems;
+  final List<Item> allItems;
   final List<Category> categories;
-  final Future<void> Function(String itemId) onAdd;
+  // Returns the current ListEntry for an item (null if not in list)
+  final ListEntry? Function(String itemId) entryFor;
+  final Future<void> Function(String itemId) onAddOrIncrement;
 
   @override
   State<AddToListBottomSheet> createState() => _AddToListBottomSheetState();
@@ -23,7 +27,23 @@ class AddToListBottomSheet extends StatefulWidget {
 class _AddToListBottomSheetState extends State<AddToListBottomSheet> {
   final _searchController = TextEditingController();
   String _query = '';
-  final Set<String> _adding = {};
+  final Set<String> _pending = {};
+
+  // Local quantity tracking so UI updates immediately without waiting for VM
+  final Map<String, double> _localQty = {};
+  final Set<String> _inList = {};
+
+  @override
+  void initState() {
+    super.initState();
+    for (final item in widget.allItems) {
+      final entry = widget.entryFor(item.id);
+      if (entry != null) {
+        _inList.add(item.id);
+        _localQty[item.id] = entry.quantity;
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -32,15 +52,15 @@ class _AddToListBottomSheetState extends State<AddToListBottomSheet> {
   }
 
   List<Item> get _filtered {
-    if (_query.isEmpty) return widget.availableItems;
+    if (_query.isEmpty) return widget.allItems;
     final q = _query.toLowerCase();
-    return widget.availableItems
+    return widget.allItems
         .where((i) => i.name.toLowerCase().contains(q))
         .toList();
   }
 
-  Category? _categoryFor(String categoryId) =>
-      widget.categories.where((c) => c.id == categoryId).firstOrNull;
+  Category? _categoryFor(String catId) =>
+      widget.categories.where((c) => c.id == catId).firstOrNull;
 
   Color? _colorFrom(String? hex) {
     if (hex == null) return null;
@@ -51,11 +71,28 @@ class _AddToListBottomSheetState extends State<AddToListBottomSheet> {
     }
   }
 
-  Future<void> _add(Item item) async {
-    if (_adding.contains(item.id)) return;
-    setState(() => _adding.add(item.id));
-    await widget.onAdd(item.id);
-    if (mounted) setState(() => _adding.remove(item.id));
+  String _fmtQty(double qty) => qty == qty.truncateToDouble()
+      ? qty.toInt().toString()
+      : qty.toStringAsFixed(1);
+
+  Future<void> _addOrIncrement(Item item) async {
+    if (_pending.contains(item.id)) return;
+    setState(() => _pending.add(item.id));
+    try {
+      await widget.onAddOrIncrement(item.id);
+      if (mounted) {
+        setState(() {
+          if (_inList.contains(item.id)) {
+            _localQty[item.id] = (_localQty[item.id] ?? 1) + 1;
+          } else {
+            _inList.add(item.id);
+            _localQty[item.id] = 1;
+          }
+        });
+      }
+    } finally {
+      if (mounted) setState(() => _pending.remove(item.id));
+    }
   }
 
   @override
@@ -87,7 +124,7 @@ class _AddToListBottomSheetState extends State<AddToListBottomSheet> {
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(
-                AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
+                AppSpacing.md, 0, AppSpacing.sm, AppSpacing.sm),
             child: Row(
               children: [
                 Expanded(
@@ -110,17 +147,13 @@ class _AddToListBottomSheetState extends State<AddToListBottomSheet> {
               onChanged: (v) => setState(() => _query = v),
             ),
           ),
-          const SizedBox(height: AppSpacing.sm),
+          const SizedBox(height: AppSpacing.xs),
           Expanded(
             child: items.isEmpty
                 ? EmptyStateWidget(
                     icon: Icons.inventory_2_outlined,
-                    headline: _query.isEmpty
-                        ? 'Todos os items já estão na lista'
-                        : 'Sem resultados',
-                    subtext: _query.isEmpty
-                        ? 'Cria novos items no separador Items.'
-                        : 'Tenta outra pesquisa.',
+                    headline: 'Sem resultados',
+                    subtext: 'Tenta outra pesquisa.',
                   )
                 : ListView.builder(
                     controller: scrollController,
@@ -130,35 +163,90 @@ class _AddToListBottomSheetState extends State<AddToListBottomSheet> {
                       final category = _categoryFor(item.categoryId);
                       final dotColor =
                           _colorFrom(category?.colorHex) ?? scheme.primary;
-                      final isAdding = _adding.contains(item.id);
+                      final isPending = _pending.contains(item.id);
+                      final isInList = _inList.contains(item.id);
+                      final qty = _localQty[item.id];
 
                       return ListTile(
                         leading: item.emoji != null
-                            ? Text(item.emoji!,
-                                style: const TextStyle(fontSize: 22))
+                            ? SizedBox(
+                                width: 36,
+                                child: Text(item.emoji!,
+                                    style: const TextStyle(fontSize: 22),
+                                    textAlign: TextAlign.center),
+                              )
                             : CircleAvatar(
-                                radius: 6,
-                                backgroundColor: dotColor,
+                                radius: 18,
+                                backgroundColor:
+                                    dotColor.withValues(alpha: 0.18),
+                                child: Text(
+                                  item.name.isNotEmpty
+                                      ? item.name[0].toUpperCase()
+                                      : '?',
+                                  style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: dotColor),
+                                ),
                               ),
                         title: Text(item.name,
                             style: theme.textTheme.titleMedium),
                         subtitle: Text(
-                          category?.name ?? 'Sem categoria',
+                          '${category?.name ?? 'Sem categoria'} · ${item.unit}',
                           style: theme.textTheme.bodySmall
                               ?.copyWith(color: scheme.onSurfaceVariant),
                         ),
-                        trailing: isAdding
-                            ? const SizedBox(
-                                width: 24,
-                                height: 24,
-                                child: CircularProgressIndicator(
-                                    strokeWidth: 2))
-                            : IconButton(
-                                icon: Icon(Icons.add_circle_outline,
-                                    color: scheme.primary),
-                                onPressed: () => _add(item),
-                              ),
-                        onTap: () => _add(item),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // Quantity badge (fixed width for alignment)
+                            SizedBox(
+                              width: 64,
+                              child: isInList && qty != null
+                                  ? Container(
+                                      padding: const EdgeInsets.symmetric(
+                                          horizontal: AppSpacing.sm,
+                                          vertical: 3),
+                                      decoration: BoxDecoration(
+                                        color: scheme.primaryContainer,
+                                        borderRadius: BorderRadius.circular(
+                                            AppRadius.full),
+                                      ),
+                                      child: Text(
+                                        '${_fmtQty(qty)} ${item.unit}',
+                                        style: theme.textTheme.labelSmall
+                                            ?.copyWith(
+                                          color: scheme.onPrimaryContainer,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                        textAlign: TextAlign.center,
+                                      ),
+                                    )
+                                  : null,
+                            ),
+                            // Add/increment button
+                            isPending
+                                ? const SizedBox(
+                                    width: 40,
+                                    height: 40,
+                                    child: Padding(
+                                      padding: EdgeInsets.all(8),
+                                      child: CircularProgressIndicator(
+                                          strokeWidth: 2),
+                                    ),
+                                  )
+                                : IconButton(
+                                    icon: Icon(
+                                      isInList
+                                          ? Icons.add_circle
+                                          : Icons.add_circle_outline,
+                                      color: scheme.primary,
+                                    ),
+                                    onPressed: () => _addOrIncrement(item),
+                                  ),
+                          ],
+                        ),
+                        onTap: isPending ? null : () => _addOrIncrement(item),
                       );
                     },
                   ),

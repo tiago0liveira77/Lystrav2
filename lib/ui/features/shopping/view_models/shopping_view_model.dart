@@ -79,10 +79,10 @@ class ShoppingViewModel extends ChangeNotifier {
   Category? categoryFor(String categoryId) =>
       _categories.where((c) => c.id == categoryId).firstOrNull;
 
-  List<Item> get availableItems {
-    final inList = _entries.map((e) => e.itemId).toSet();
-    return _items.where((i) => !inList.contains(i.id)).toList();
-  }
+  ListEntry? entryForItem(String itemId) =>
+      _entries.where((e) => e.itemId == itemId).firstOrNull;
+
+  List<Item> get allItems => List.unmodifiable(_items);
 
   List<Category> get categories => List.unmodifiable(_categories);
 
@@ -131,6 +131,16 @@ class ShoppingViewModel extends ChangeNotifier {
     final entry = await _entryRepository.addEntry(uid, _listId, itemId);
     _entries = [..._entries, entry];
     notifyListeners();
+  }
+
+  // Adds item if not in list; increments quantity if already present.
+  Future<void> addOrIncrement(String itemId) async {
+    final existing = entryForItem(itemId);
+    if (existing != null) {
+      await updateQuantity(existing.id, existing.quantity + 1);
+    } else {
+      await addItem(itemId);
+    }
   }
 
   Future<void> removeEntry(String entryId) async {
