@@ -55,6 +55,8 @@ void setupServiceLocator() {
       itemRepository: sl(),
       categoryRepository: sl(),
       authRepository: sl(),
+      listRepository: sl(),
+      entryRepository: sl(),
     ),
   );
   sl.registerFactory<HistoryViewModel>(

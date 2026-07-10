@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -14,9 +16,30 @@ import 'package:lystra/ui/features/history/views/history_view.dart';
 import 'package:lystra/ui/features/profile/views/profile_view.dart';
 import 'package:lystra/ui/features/shopping/views/shopping_view.dart';
 
+// Bridges Firebase auth state stream into a ChangeNotifier so GoRouter
+// re-evaluates its redirect function on every auth state change.
+class _AuthRefreshNotifier extends ChangeNotifier {
+  _AuthRefreshNotifier() {
+    _sub = FirebaseAuth.instance.authStateChanges().listen((_) {
+      notifyListeners();
+    });
+  }
+
+  late final StreamSubscription<User?> _sub;
+
+  @override
+  void dispose() {
+    _sub.cancel();
+    super.dispose();
+  }
+}
+
+final _authRefresh = _AuthRefreshNotifier();
+
 final appRouter = GoRouter(
   initialLocation: '/lists',
   redirect: _authGuard,
+  refreshListenable: _authRefresh,
   routes: [
     GoRoute(
       path: '/auth/login',

@@ -14,6 +14,7 @@ class ItemFormBottomSheet extends StatefulWidget {
     this.initialCategoryId,
     this.initialUnit,
     this.initialEmoji,
+    this.extraActions,
   });
 
   final List<Category> categories;
@@ -25,6 +26,7 @@ class ItemFormBottomSheet extends StatefulWidget {
   final String? initialCategoryId;
   final String? initialUnit;
   final String? initialEmoji;
+  final List<Widget>? extraActions;
 
   @override
   State<ItemFormBottomSheet> createState() => _ItemFormBottomSheetState();
@@ -102,18 +104,29 @@ class _ItemFormBottomSheetState extends State<ItemFormBottomSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final mainButton = FilledButton(
+      onPressed: _isLoading ? null : _submit,
+      child: _isLoading
+          ? const SizedBox(
+              height: 20,
+              width: 20,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: Colors.white))
+          : Text(widget.initialName != null ? 'Guardar' : 'Adicionar'),
+    );
+
     return LystraBottomSheetContent(
       title: widget.initialName != null ? 'Editar item' : 'Novo item',
-      action: FilledButton(
-        onPressed: _isLoading ? null : _submit,
-        child: _isLoading
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                    strokeWidth: 2, color: Colors.white))
-            : Text(widget.initialName != null ? 'Guardar' : 'Adicionar'),
-      ),
+      action: widget.extraActions != null && widget.extraActions!.isNotEmpty
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                mainButton,
+                const SizedBox(height: 4),
+                ...widget.extraActions!,
+              ],
+            )
+          : mainButton,
       child: Form(
         key: _formKey,
         child: Column(

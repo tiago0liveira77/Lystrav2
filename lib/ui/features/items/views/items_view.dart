@@ -7,6 +7,7 @@ import 'package:lystra/ui/features/items/view_models/items_view_model.dart';
 import 'package:lystra/ui/features/items/views/widgets/category_chip.dart';
 import 'package:lystra/ui/features/items/views/widgets/item_form_bottom_sheet.dart';
 import 'package:lystra/ui/features/items/views/widgets/list_item_row.dart';
+import 'package:lystra/ui/features/items/views/widgets/quick_add_to_list_sheet.dart';
 import 'package:lystra/ui/features/lists/view_models/lists_view_model.dart';
 
 class ItemsView extends StatefulWidget {
@@ -33,13 +34,30 @@ class _ItemsViewState extends State<ItemsView> {
     super.dispose();
   }
 
+  // Builds a flat list mixing String (letter headers) and Item objects
+  List<dynamic> _buildAlphabeticalEntries(List<Item> items) {
+    final result = <dynamic>[];
+    String? lastLetter;
+    for (final item in items) {
+      final letter =
+          item.name.isNotEmpty ? item.name[0].toUpperCase() : '#';
+      if (letter != lastLetter) {
+        result.add(letter);
+        lastLetter = letter;
+      }
+      result.add(item);
+    }
+    return result;
+  }
+
   void _showCreateSheet() {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.xl)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppSpacing.xl)),
       ),
       builder: (_) => ItemFormBottomSheet(
         categories: widget.viewModel.categories,
@@ -54,6 +72,69 @@ class _ItemsViewState extends State<ItemsView> {
     );
   }
 
+  void _showEditSheet(Item item) {
+    final vm = widget.viewModel;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppSpacing.xl)),
+      ),
+      builder: (_) => ItemFormBottomSheet(
+        categories: vm.categories,
+        onCreateCategory: (name, colorHex) =>
+            vm.createCategory(name, colorHex),
+        initialName: item.name,
+        initialCategoryId: item.categoryId,
+        initialUnit: item.unit,
+        initialEmoji: item.emoji,
+        onSubmit: (name, categoryId, unit, emoji) async {
+          await vm.updateItem(item.copyWith(
+            name: name,
+            categoryId: categoryId,
+            unit: unit,
+            emoji: emoji,
+          ));
+          if (mounted) Navigator.pop(context); // ignore: use_build_context_synchronously
+        },
+        extraActions: [
+          TextButton.icon(
+            onPressed: () {
+              Navigator.pop(context);
+              vm.deleteItem(item.id);
+            },
+            icon: const Icon(Icons.delete_outline),
+            label: const Text('Apagar'),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showQuickAddSheet(Item item) {
+    final vm = widget.viewModel;
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppSpacing.xl)),
+      ),
+      builder: (_) => QuickAddToListSheet(
+        item: item,
+        getLists: vm.getActiveLists,
+        isInList: (listId) => vm.isItemInList(item.id, listId),
+        onAdd: (listId) => vm.addToList(item.id, listId),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -64,15 +145,17 @@ class _ItemsViewState extends State<ItemsView> {
           return CustomScrollView(
             slivers: [
               SliverAppBar(
-                title: const Text('Items'),
-                floating: true,
+                pinned: true,
+                toolbarHeight: 0,
                 bottom: PreferredSize(
-                  preferredSize: const Size.fromHeight(116),
+                  preferredSize: Size.fromHeight(
+                      vm.categories.isEmpty ? 72 : 112),
                   child: Column(
                     children: [
                       Padding(
                         padding: const EdgeInsets.fromLTRB(
-                            AppSpacing.md, 0, AppSpacing.md, AppSpacing.sm),
+                            AppSpacing.md, AppSpacing.sm, AppSpacing.md,
+                            AppSpacing.xs),
                         child: SearchBar(
                           controller: _searchController,
                           hintText: 'Pesquisar items...',
@@ -104,12 +187,14 @@ class _ItemsViewState extends State<ItemsView> {
                             ],
                           ),
                         ),
-                      const SizedBox(height: AppSpacing.sm),
+                      const SizedBox(height: AppSpacing.xs),
                     ],
                   ),
                 ),
               ),
               _buildBody(vm),
+              // Bottom FAB clearance
+              const SliverToBoxAdapter(child: SizedBox(height: 96)),
             ],
           );
         },
@@ -138,9 +223,8 @@ class _ItemsViewState extends State<ItemsView> {
       return SliverFillRemaining(
         child: EmptyStateWidget(
           icon: Icons.inventory_2_outlined,
-          headline: vm.searchQuery.isEmpty
-              ? 'Nenhum item ainda'
-              : 'Sem resultados',
+          headline:
+              vm.searchQuery.isEmpty ? 'Nenhum item ainda' : 'Sem resultados',
           subtext: vm.searchQuery.isEmpty
               ? 'Adiciona itens ao teu catálogo.'
               : 'Tenta outra pesquisa.',
@@ -150,44 +234,40 @@ class _ItemsViewState extends State<ItemsView> {
       );
     }
 
+    final entries = _buildAlphabeticalEntries(items);
+
     return SliverList.builder(
-      itemCount: items.length,
+      itemCount: entries.length,
       itemBuilder: (_, i) {
-        final item = items[i];
+        final entry = entries[i];
+
+        // Letter header
+        if (entry is String) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, AppSpacing.md, AppSpacing.md, AppSpacing.xs),
+            child: Text(
+              entry,
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.w700,
+                  ),
+            ),
+          );
+        }
+
+        // Item card
+        final item = entry as Item;
         final category = vm.categoryFor(item.categoryId);
         return ListItemRow(
+          key: ValueKey(item.id),
           item: item,
           categoryName: category?.name,
           categoryColorHex: category?.colorHex,
-          onDelete: () => _confirmDelete(item),
+          onTap: () => _showEditSheet(item),
+          onQuickAdd: () => _showQuickAddSheet(item),
         );
       },
-    );
-  }
-
-  void _confirmDelete(Item item) {
-    showDialog(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: const Text('Apagar item'),
-        content: Text('Apagar "${item.name}"?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: const Text('Cancelar'),
-          ),
-          TextButton(
-            onPressed: () {
-              Navigator.pop(dialogContext);
-              widget.viewModel.deleteItem(item.id);
-            },
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('Apagar'),
-          ),
-        ],
-      ),
     );
   }
 }

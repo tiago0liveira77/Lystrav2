@@ -37,7 +37,7 @@ class ShoppingListRepository {
       ownerId: uid,
       createdAt: now,
     );
-    _cache?.insert(0, list);
+    if (_cache != null) _cache = [list, ..._cache!];
     return list;
   }
 
@@ -53,12 +53,12 @@ class ShoppingListRepository {
   Future<void> archiveList(String uid, String listId) async {
     await _firestore
         .updateDoc('users/$uid/lists/$listId', {'isArchived': true});
-    _cache?.removeWhere((l) => l.id == listId);
+    _cache = _cache?.where((l) => l.id != listId).toList();
   }
 
   Future<void> deleteList(String uid, String listId) async {
     await _firestore.deleteDoc('users/$uid/lists/$listId');
-    _cache?.removeWhere((l) => l.id == listId);
+    _cache = _cache?.where((l) => l.id != listId).toList();
   }
 
   void invalidateCache() => _cache = null;

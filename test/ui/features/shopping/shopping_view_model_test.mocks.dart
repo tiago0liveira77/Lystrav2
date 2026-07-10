@@ -211,6 +211,23 @@ class MockListEntryRepository extends _i1.Mock
       ) as _i9.Future<void>);
 
   @override
+  _i9.Future<void> resetEntries(
+    String? uid,
+    String? listId,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #resetEntries,
+          [
+            uid,
+            listId,
+          ],
+        ),
+        returnValue: _i9.Future<void>.value(),
+        returnValueForMissingStub: _i9.Future<void>.value(),
+      ) as _i9.Future<void>);
+
+  @override
   void invalidateCache(String? listId) => super.noSuchMethod(
         Invocation.method(
           #invalidateCache,

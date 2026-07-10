@@ -178,8 +178,11 @@ class ShoppingViewModel extends ChangeNotifier {
       );
 
       await _purchaseRecordRepository.createRecord(uid, record);
-      await _listRepository.archiveList(uid, _listId);
-      _entryRepository.invalidateCache(_listId);
+      // Reset entries to unchecked — list stays visible and reusable
+      await _entryRepository.resetEntries(uid, _listId);
+      _entries = _entries
+          .map((e) => e.copyWith(isChecked: false, checkedAt: null))
+          .toList();
       return true;
     } catch (_) {
       return false;

@@ -104,7 +104,8 @@ void main() {
     expect(vm.isComplete, isTrue);
   });
 
-  test('finishShopping creates record and archives list', () async {
+  test('finishShopping creates record and resets entries (list stays active)',
+      () async {
     when(mockListRepo.getLists(uid)).thenAnswer((_) async => [fakeList]);
     final checkedEntry = fakeEntry.copyWith(isChecked: true, checkedAt: now);
     when(mockEntryRepo.getEntries(uid, listId))
@@ -122,12 +123,16 @@ void main() {
     );
     when(mockRecordRepo.createRecord(uid, any))
         .thenAnswer((_) async => savedRecord);
-    when(mockListRepo.archiveList(uid, listId)).thenAnswer((_) async {});
+    when(mockEntryRepo.resetEntries(uid, listId)).thenAnswer((_) async {});
 
     final success = await vm.finishShopping();
 
     expect(success, isTrue);
     verify(mockRecordRepo.createRecord(uid, any)).called(1);
-    verify(mockListRepo.archiveList(uid, listId)).called(1);
+    verify(mockEntryRepo.resetEntries(uid, listId)).called(1);
+    // List is NOT archived
+    verifyNever(mockListRepo.archiveList(any, any));
+    // Entries are unchecked in local state
+    expect(vm.checkedEntries, isEmpty);
   });
 }

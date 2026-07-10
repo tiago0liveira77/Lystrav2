@@ -2,8 +2,11 @@ import 'package:flutter/foundation.dart' hide Category;
 import 'package:lystra/data/repositories/auth_repository.dart';
 import 'package:lystra/data/repositories/category_repository.dart';
 import 'package:lystra/data/repositories/item_repository.dart';
+import 'package:lystra/data/repositories/list_entry_repository.dart';
+import 'package:lystra/data/repositories/shopping_list_repository.dart';
 import 'package:lystra/domain/models/category.dart';
 import 'package:lystra/domain/models/item.dart';
+import 'package:lystra/domain/models/shopping_list.dart';
 import 'package:lystra/ui/features/lists/view_models/lists_view_model.dart';
 
 class ItemsViewModel extends ChangeNotifier {
@@ -11,13 +14,19 @@ class ItemsViewModel extends ChangeNotifier {
     required ItemRepository itemRepository,
     required CategoryRepository categoryRepository,
     required AuthRepository authRepository,
+    required ShoppingListRepository listRepository,
+    required ListEntryRepository entryRepository,
   })  : _itemRepository = itemRepository,
         _categoryRepository = categoryRepository,
-        _authRepository = authRepository;
+        _authRepository = authRepository,
+        _listRepository = listRepository,
+        _entryRepository = entryRepository;
 
   final ItemRepository _itemRepository;
   final CategoryRepository _categoryRepository;
   final AuthRepository _authRepository;
+  final ShoppingListRepository _listRepository;
+  final ListEntryRepository _entryRepository;
 
   List<Item> _allItems = [];
   List<Category> _categories = [];
@@ -77,7 +86,8 @@ class ItemsViewModel extends ChangeNotifier {
   Future<Category?> createCategory(String name, String colorHex) async {
     final uid = _uid;
     if (uid == null || name.trim().isEmpty) return null;
-    final category = await _categoryRepository.createCategory(uid, name, colorHex);
+    final category =
+        await _categoryRepository.createCategory(uid, name, colorHex);
     _categories = [..._categories, category]
       ..sort((a, b) => a.name.compareTo(b.name));
     notifyListeners();
@@ -102,6 +112,26 @@ class ItemsViewModel extends ChangeNotifier {
 
   Category? categoryFor(String categoryId) =>
       _categories.where((c) => c.id == categoryId).firstOrNull;
+
+  // Quick-add to list helpers
+  Future<List<ShoppingList>> getActiveLists() async {
+    final uid = _uid;
+    if (uid == null) return [];
+    return _listRepository.getLists(uid);
+  }
+
+  Future<bool> isItemInList(String itemId, String listId) async {
+    final uid = _uid;
+    if (uid == null) return false;
+    final entries = await _entryRepository.getEntries(uid, listId);
+    return entries.any((e) => e.itemId == itemId);
+  }
+
+  Future<void> addToList(String itemId, String listId) async {
+    final uid = _uid;
+    if (uid == null) return;
+    await _entryRepository.addEntry(uid, listId, itemId);
+  }
 
   void _setState(ViewState state) {
     _state = state;

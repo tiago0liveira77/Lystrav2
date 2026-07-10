@@ -220,6 +220,8 @@ class _ShoppingViewState extends State<ShoppingView> {
                 item: item,
                 onToggle: () => _vm.toggleEntry(entry.id),
                 onRemove: () => _vm.removeEntry(entry.id),
+                onIncrease: () =>
+                    _vm.updateQuantity(entry.id, entry.quantity + 1),
                 categoryColorHex: _vm.categoryFor(item.categoryId)?.colorHex,
               );
             }),
@@ -248,6 +250,8 @@ class _ShoppingViewState extends State<ShoppingView> {
             item: item,
             onToggle: () => _vm.toggleEntry(entry.id),
             onRemove: () => _vm.removeEntry(entry.id),
+            onIncrease: () =>
+                _vm.updateQuantity(entry.id, entry.quantity + 1),
             categoryColorHex: _vm.categoryFor(item.categoryId)?.colorHex,
           );
         }).toList(),
