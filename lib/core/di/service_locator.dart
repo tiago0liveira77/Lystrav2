@@ -3,10 +3,12 @@ import 'package:lystra/data/repositories/auth_repository.dart';
 import 'package:lystra/data/repositories/category_repository.dart';
 import 'package:lystra/data/repositories/item_repository.dart';
 import 'package:lystra/data/repositories/list_entry_repository.dart';
+import 'package:lystra/data/repositories/purchase_record_repository.dart';
 import 'package:lystra/data/repositories/shopping_list_repository.dart';
 import 'package:lystra/data/services/firebase_auth_service.dart';
 import 'package:lystra/data/services/firestore_service.dart';
 import 'package:lystra/ui/features/auth/view_models/auth_view_model.dart';
+import 'package:lystra/ui/features/history/view_models/history_view_model.dart';
 import 'package:lystra/ui/features/items/view_models/items_view_model.dart';
 import 'package:lystra/ui/features/lists/view_models/lists_view_model.dart';
 
@@ -33,6 +35,9 @@ void setupServiceLocator() {
   sl.registerLazySingleton<ListEntryRepository>(
     () => ListEntryRepository(firestoreService: sl()),
   );
+  sl.registerLazySingleton<PurchaseRecordRepository>(
+    () => PurchaseRecordRepository(firestoreService: sl()),
+  );
 
   // 3. ViewModels — factory (new instance per screen, no stale state)
   sl.registerFactory<AuthViewModel>(
@@ -42,12 +47,19 @@ void setupServiceLocator() {
     () => ListsViewModel(
       listRepository: sl(),
       authRepository: sl(),
+      entryRepository: sl(),
     ),
   );
   sl.registerFactory<ItemsViewModel>(
     () => ItemsViewModel(
       itemRepository: sl(),
       categoryRepository: sl(),
+      authRepository: sl(),
+    ),
+  );
+  sl.registerFactory<HistoryViewModel>(
+    () => HistoryViewModel(
+      recordRepository: sl(),
       authRepository: sl(),
     ),
   );

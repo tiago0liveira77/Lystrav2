@@ -64,14 +64,24 @@ class ItemsViewModel extends ChangeNotifier {
   }
 
   Future<Item?> createItem(
-      String name, String categoryId, String unit) async {
+      String name, String categoryId, String unit, {String? emoji}) async {
     final uid = _uid;
     if (uid == null) return null;
-    final item =
-        await _itemRepository.createItem(uid, name, categoryId, unit: unit);
+    final item = await _itemRepository.createItem(uid, name, categoryId,
+        unit: unit, emoji: emoji);
     _allItems = [..._allItems, item]..sort((a, b) => a.name.compareTo(b.name));
     notifyListeners();
     return item;
+  }
+
+  Future<Category?> createCategory(String name, String colorHex) async {
+    final uid = _uid;
+    if (uid == null || name.trim().isEmpty) return null;
+    final category = await _categoryRepository.createCategory(uid, name, colorHex);
+    _categories = [..._categories, category]
+      ..sort((a, b) => a.name.compareTo(b.name));
+    notifyListeners();
+    return category;
   }
 
   Future<void> updateItem(Item item) async {

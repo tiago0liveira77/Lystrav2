@@ -120,6 +120,8 @@ class _ListsViewState extends State<ListsView> {
           final list = vm.lists[i];
           return ShoppingListCard(
             shoppingList: list,
+            totalCount: vm.totalCountFor(list.id),
+            checkedCount: vm.checkedCountFor(list.id),
             onTap: () => context.go('/lists/${list.id}/shop'),
             onDelete: () => _confirmDelete(list),
             onRename: () => _showRenameSheet(list),
@@ -132,21 +134,21 @@ class _ListsViewState extends State<ListsView> {
   void _confirmDelete(ShoppingList list) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Apagar lista'),
         content: Text('Tens a certeza que queres apagar "${list.name}"?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancelar'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               widget.viewModel.deleteList(list.id);
             },
             style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(dialogContext).colorScheme.error,
             ),
             child: const Text('Apagar'),
           ),

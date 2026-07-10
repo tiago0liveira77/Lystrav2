@@ -10,5 +10,6 @@ abstract class Item with _$Item {
     required String categoryId,
     @Default('un') String unit,
     String? ownerId,
+    String? emoji,
   }) = _Item;
 }

@@ -39,11 +39,19 @@ class ListItemRow extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
         child: Row(
           children: [
-            Container(
-              width: 8,
-              height: 8,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            ),
+            item.emoji != null
+                ? SizedBox(
+                    width: 28,
+                    child: Text(item.emoji!,
+                        style: const TextStyle(fontSize: 20),
+                        textAlign: TextAlign.center),
+                  )
+                : Container(
+                    width: 8,
+                    height: 8,
+                    decoration:
+                        BoxDecoration(color: color, shape: BoxShape.circle),
+                  ),
             const SizedBox(width: AppSpacing.md),
             Expanded(
               child: Column(

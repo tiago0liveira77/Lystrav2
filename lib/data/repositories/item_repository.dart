@@ -36,12 +36,13 @@ class ItemRepository {
   }
 
   Future<Item> createItem(String uid, String name, String categoryId,
-      {String unit = 'un'}) async {
+      {String unit = 'un', String? emoji}) async {
     final ref = await _firestore.addDoc(_path(uid), {
       'name': name.trim(),
       'categoryId': categoryId,
       'unit': unit,
       'ownerId': uid,
+      if (emoji != null) 'emoji': emoji,
     });
     final item = Item(
       id: ref.id,
@@ -49,8 +50,9 @@ class ItemRepository {
       categoryId: categoryId,
       unit: unit,
       ownerId: uid,
+      emoji: emoji,
     );
-    _cache?.add(item);
+    if (_cache != null) _cache = [..._cache!, item];
     return item;
   }
 

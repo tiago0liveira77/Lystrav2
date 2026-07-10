@@ -12,6 +12,7 @@ class ItemModel {
     required this.categoryId,
     this.unit = 'un',
     this.ownerId,
+    this.emoji,
   });
 
   final String id;
@@ -19,6 +20,7 @@ class ItemModel {
   final String categoryId;
   final String unit;
   final String? ownerId;
+  final String? emoji;
 
   factory ItemModel.fromJson(Map<String, dynamic> json) =>
       _$ItemModelFromJson(json);
@@ -38,6 +40,7 @@ class ItemModel {
         categoryId: categoryId,
         unit: unit,
         ownerId: ownerId,
+        emoji: emoji,
       );
 
   factory ItemModel.fromDomain(Item item) => ItemModel(
@@ -46,5 +49,6 @@ class ItemModel {
         categoryId: item.categoryId,
         unit: item.unit,
         ownerId: item.ownerId,
+        emoji: item.emoji,
       );
 }

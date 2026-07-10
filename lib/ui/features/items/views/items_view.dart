@@ -43,8 +43,11 @@ class _ItemsViewState extends State<ItemsView> {
       ),
       builder: (_) => ItemFormBottomSheet(
         categories: widget.viewModel.categories,
-        onSubmit: (name, categoryId, unit) async {
-          await widget.viewModel.createItem(name, categoryId, unit);
+        onCreateCategory: (name, colorHex) =>
+            widget.viewModel.createCategory(name, colorHex),
+        onSubmit: (name, categoryId, unit, emoji) async {
+          await widget.viewModel.createItem(name, categoryId, unit,
+              emoji: emoji);
           if (mounted) Navigator.pop(context); // ignore: use_build_context_synchronously
         },
       ),
@@ -165,17 +168,17 @@ class _ItemsViewState extends State<ItemsView> {
   void _confirmDelete(Item item) {
     showDialog(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Apagar item'),
         content: Text('Apagar "${item.name}"?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => Navigator.pop(dialogContext),
             child: const Text('Cancelar'),
           ),
           TextButton(
             onPressed: () {
-              Navigator.pop(context);
+              Navigator.pop(dialogContext);
               widget.viewModel.deleteItem(item.id);
             },
             style: TextButton.styleFrom(

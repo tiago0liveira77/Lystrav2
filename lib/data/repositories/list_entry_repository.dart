@@ -47,7 +47,9 @@ class ListEntryRepository {
       addedAt: now,
       addedById: uid,
     );
-    _cache[listId]?.add(entry);
+    if (_cache.containsKey(listId)) {
+      _cache[listId] = [..._cache[listId]!, entry];
+    }
     return entry;
   }
 

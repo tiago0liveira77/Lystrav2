@@ -3,11 +3,14 @@ import 'package:go_router/go_router.dart';
 import 'package:lystra/core/di/service_locator.dart';
 import 'package:lystra/core/theme/app_spacing.dart';
 import 'package:lystra/data/repositories/auth_repository.dart';
+import 'package:lystra/data/repositories/category_repository.dart';
 import 'package:lystra/data/repositories/item_repository.dart';
 import 'package:lystra/data/repositories/list_entry_repository.dart';
+import 'package:lystra/data/repositories/purchase_record_repository.dart';
 import 'package:lystra/data/repositories/shopping_list_repository.dart';
 import 'package:lystra/ui/core/widgets/skeleton_list_tile.dart';
 import 'package:lystra/ui/features/shopping/view_models/shopping_view_model.dart';
+import 'package:lystra/ui/features/shopping/views/widgets/add_to_list_bottom_sheet.dart';
 import 'package:lystra/ui/features/shopping/views/widgets/shopping_item_row.dart';
 
 class ShoppingView extends StatefulWidget {
@@ -31,6 +34,8 @@ class _ShoppingViewState extends State<ShoppingView> {
       listRepository: sl<ShoppingListRepository>(),
       itemRepository: sl<ItemRepository>(),
       authRepository: sl<AuthRepository>(),
+      purchaseRecordRepository: sl<PurchaseRecordRepository>(),
+      categoryRepository: sl<CategoryRepository>(),
     );
     _vm.load();
   }
@@ -44,17 +49,17 @@ class _ShoppingViewState extends State<ShoppingView> {
   Future<void> _confirmFinish() async {
     final confirmed = await showDialog<bool>(
       context: context,
-      builder: (_) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: const Text('Terminar compras'),
         content: const Text(
             'Marca esta lista como concluída e guarda o histórico?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.pop(dialogContext, false),
             child: const Text('Cancelar'),
           ),
           FilledButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.pop(dialogContext, true),
             child: const Text('Terminar'),
           ),
         ],
@@ -64,6 +69,19 @@ class _ShoppingViewState extends State<ShoppingView> {
       final success = await _vm.finishShopping();
       if (success && mounted) context.go('/lists');
     }
+  }
+
+  void _showAddItemSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      builder: (_) => AddToListBottomSheet(
+        availableItems: _vm.availableItems,
+        categories: _vm.categories,
+        onAdd: (itemId) => _vm.addItem(itemId),
+      ),
+    );
   }
 
   @override
@@ -82,7 +100,7 @@ class _ShoppingViewState extends State<ShoppingView> {
                 ),
                 title: Text(_vm.list?.name ?? ''),
                 actions: [
-                  if (_vm.isComplete)
+                  if (!_vm.isLoading && _vm.entries.isNotEmpty)
                     FilledButton.icon(
                       onPressed: _vm.isFinishing ? null : _confirmFinish,
                       icon: const Icon(Icons.check, size: 18),
@@ -125,10 +143,19 @@ class _ShoppingViewState extends State<ShoppingView> {
                 )
               else
                 _buildItemList(),
-              if (_vm.checkedEntries.isNotEmpty)
-                _buildCheckedSection(),
+              if (_vm.checkedEntries.isNotEmpty) _buildCheckedSection(),
+              const SliverToBoxAdapter(
+                child: SizedBox(height: 96),
+              ),
             ],
           ),
+          floatingActionButton: _vm.isLoading
+              ? null
+              : FloatingActionButton.extended(
+                  onPressed: _showAddItemSheet,
+                  icon: const Icon(Icons.add),
+                  label: const Text('Adicionar item'),
+                ),
         );
       },
     );
@@ -148,6 +175,13 @@ class _ShoppingViewState extends State<ShoppingView> {
                 'Lista vazia',
                 style: Theme.of(context).textTheme.headlineSmall,
               ),
+              const SizedBox(height: AppSpacing.sm),
+              Text(
+                'Toca em "Adicionar item" para começar.',
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
             ],
           ),
         ),
@@ -160,6 +194,10 @@ class _ShoppingViewState extends State<ShoppingView> {
       itemBuilder: (_, i) {
         final catId = categoryIds[i];
         final entries = byCategory[catId]!;
+        final categoryName = catId == 'uncategorized'
+            ? 'Sem categoria'
+            : (_vm.categoryFor(catId)?.name ?? 'Sem categoria');
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -167,7 +205,7 @@ class _ShoppingViewState extends State<ShoppingView> {
               padding: const EdgeInsets.fromLTRB(
                   AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xs),
               child: Text(
-                catId == 'uncategorized' ? 'Sem categoria' : catId,
+                categoryName,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -182,6 +220,7 @@ class _ShoppingViewState extends State<ShoppingView> {
                 item: item,
                 onToggle: () => _vm.toggleEntry(entry.id),
                 onRemove: () => _vm.removeEntry(entry.id),
+                categoryColorHex: _vm.categoryFor(item.categoryId)?.colorHex,
               );
             }),
           ],
@@ -209,6 +248,7 @@ class _ShoppingViewState extends State<ShoppingView> {
             item: item,
             onToggle: () => _vm.toggleEntry(entry.id),
             onRemove: () => _vm.removeEntry(entry.id),
+            categoryColorHex: _vm.categoryFor(item.categoryId)?.colorHex,
           );
         }).toList(),
       ),

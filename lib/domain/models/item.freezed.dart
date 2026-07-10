@@ -21,6 +21,7 @@ mixin _$Item {
   String get categoryId => throw _privateConstructorUsedError;
   String get unit => throw _privateConstructorUsedError;
   String? get ownerId => throw _privateConstructorUsedError;
+  String? get emoji => throw _privateConstructorUsedError;
 
   /// Create a copy of Item
   /// with the given fields replaced by the non-null parameter values.
@@ -38,7 +39,8 @@ abstract class $ItemCopyWith<$Res> {
       String name,
       String categoryId,
       String unit,
-      String? ownerId});
+      String? ownerId,
+      String? emoji});
 }
 
 /// @nodoc
@@ -61,6 +63,7 @@ class _$ItemCopyWithImpl<$Res, $Val extends Item>
     Object? categoryId = null,
     Object? unit = null,
     Object? ownerId = freezed,
+    Object? emoji = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -83,6 +86,10 @@ class _$ItemCopyWithImpl<$Res, $Val extends Item>
           ? _value.ownerId
           : ownerId // ignore: cast_nullable_to_non_nullable
               as String?,
+      emoji: freezed == emoji
+          ? _value.emoji
+          : emoji // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -99,7 +106,8 @@ abstract class _$$ItemImplCopyWith<$Res> implements $ItemCopyWith<$Res> {
       String name,
       String categoryId,
       String unit,
-      String? ownerId});
+      String? ownerId,
+      String? emoji});
 }
 
 /// @nodoc
@@ -119,6 +127,7 @@ class __$$ItemImplCopyWithImpl<$Res>
     Object? categoryId = null,
     Object? unit = null,
     Object? ownerId = freezed,
+    Object? emoji = freezed,
   }) {
     return _then(_$ItemImpl(
       id: null == id
@@ -141,6 +150,10 @@ class __$$ItemImplCopyWithImpl<$Res>
           ? _value.ownerId
           : ownerId // ignore: cast_nullable_to_non_nullable
               as String?,
+      emoji: freezed == emoji
+          ? _value.emoji
+          : emoji // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -153,7 +166,8 @@ class _$ItemImpl implements _Item {
       required this.name,
       required this.categoryId,
       this.unit = 'un',
-      this.ownerId});
+      this.ownerId,
+      this.emoji});
 
   @override
   final String id;
@@ -166,10 +180,12 @@ class _$ItemImpl implements _Item {
   final String unit;
   @override
   final String? ownerId;
+  @override
+  final String? emoji;
 
   @override
   String toString() {
-    return 'Item(id: $id, name: $name, categoryId: $categoryId, unit: $unit, ownerId: $ownerId)';
+    return 'Item(id: $id, name: $name, categoryId: $categoryId, unit: $unit, ownerId: $ownerId, emoji: $emoji)';
   }
 
   @override
@@ -182,12 +198,13 @@ class _$ItemImpl implements _Item {
             (identical(other.categoryId, categoryId) ||
                 other.categoryId == categoryId) &&
             (identical(other.unit, unit) || other.unit == unit) &&
-            (identical(other.ownerId, ownerId) || other.ownerId == ownerId));
+            (identical(other.ownerId, ownerId) || other.ownerId == ownerId) &&
+            (identical(other.emoji, emoji) || other.emoji == emoji));
   }
 
   @override
   int get hashCode =>
-      Object.hash(runtimeType, id, name, categoryId, unit, ownerId);
+      Object.hash(runtimeType, id, name, categoryId, unit, ownerId, emoji);
 
   /// Create a copy of Item
   /// with the given fields replaced by the non-null parameter values.
@@ -204,7 +221,8 @@ abstract class _Item implements Item {
       required final String name,
       required final String categoryId,
       final String unit,
-      final String? ownerId}) = _$ItemImpl;
+      final String? ownerId,
+      final String? emoji}) = _$ItemImpl;
 
   @override
   String get id;
@@ -216,6 +234,8 @@ abstract class _Item implements Item {
   String get unit;
   @override
   String? get ownerId;
+  @override
+  String? get emoji;
 
   /// Create a copy of Item
   /// with the given fields replaced by the non-null parameter values.

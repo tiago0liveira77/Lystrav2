@@ -34,7 +34,7 @@ class CategoryRepository {
       colorHex: colorHex,
       iconCode: iconCode,
     );
-    _cache?.add(category);
+    if (_cache != null) _cache = [..._cache!, category];
     return category;
   }
 

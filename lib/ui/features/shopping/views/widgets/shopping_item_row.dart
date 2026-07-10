@@ -135,14 +135,23 @@ class _ShoppingItemRowState extends State<ShoppingItemRow>
                 padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 child: Row(
                   children: [
-                    Container(
-                      width: 8,
-                      height: 8,
-                      decoration: BoxDecoration(
-                        color: widget.entry.isChecked ? scheme.primary : dotColor,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
+                    widget.item.emoji != null
+                        ? SizedBox(
+                            width: 28,
+                            child: Text(widget.item.emoji!,
+                                style: const TextStyle(fontSize: 20),
+                                textAlign: TextAlign.center),
+                          )
+                        : Container(
+                            width: 8,
+                            height: 8,
+                            decoration: BoxDecoration(
+                              color: widget.entry.isChecked
+                                  ? scheme.primary
+                                  : dotColor,
+                              shape: BoxShape.circle,
+                            ),
+                          ),
                     const SizedBox(width: AppSpacing.md),
                     Expanded(
                       child: Opacity(

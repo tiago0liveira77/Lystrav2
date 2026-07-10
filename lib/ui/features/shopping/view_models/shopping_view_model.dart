@@ -1,10 +1,14 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter/foundation.dart' hide Category;
 import 'package:lystra/data/repositories/auth_repository.dart';
+import 'package:lystra/data/repositories/category_repository.dart';
 import 'package:lystra/data/repositories/item_repository.dart';
 import 'package:lystra/data/repositories/list_entry_repository.dart';
+import 'package:lystra/data/repositories/purchase_record_repository.dart';
 import 'package:lystra/data/repositories/shopping_list_repository.dart';
+import 'package:lystra/domain/models/category.dart';
 import 'package:lystra/domain/models/item.dart';
 import 'package:lystra/domain/models/list_entry.dart';
+import 'package:lystra/domain/models/purchase_record.dart';
 import 'package:lystra/domain/models/shopping_list.dart';
 
 class ShoppingViewModel extends ChangeNotifier {
@@ -14,23 +18,30 @@ class ShoppingViewModel extends ChangeNotifier {
     required ShoppingListRepository listRepository,
     required ItemRepository itemRepository,
     required AuthRepository authRepository,
+    required PurchaseRecordRepository purchaseRecordRepository,
+    required CategoryRepository categoryRepository,
   })  : _listId = listId,
         _entryRepository = entryRepository,
         _listRepository = listRepository,
         _itemRepository = itemRepository,
-        _authRepository = authRepository;
+        _authRepository = authRepository,
+        _purchaseRecordRepository = purchaseRecordRepository,
+        _categoryRepository = categoryRepository;
 
   final String _listId;
   final ListEntryRepository _entryRepository;
   final ShoppingListRepository _listRepository;
   final ItemRepository _itemRepository;
   final AuthRepository _authRepository;
+  final PurchaseRecordRepository _purchaseRecordRepository;
+  final CategoryRepository _categoryRepository;
 
   ShoppingList? _list;
   ShoppingList? get list => _list;
 
   List<ListEntry> _entries = [];
   List<Item> _items = [];
+  List<Category> _categories = [];
 
   bool _isLoading = true;
   bool get isLoading => _isLoading;
@@ -40,6 +51,7 @@ class ShoppingViewModel extends ChangeNotifier {
 
   String? get _uid => _authRepository.currentUser?.uid;
 
+  List<ListEntry> get entries => List.unmodifiable(_entries);
   List<ListEntry> get uncheckedEntries =>
       _entries.where((e) => !e.isChecked).toList();
   List<ListEntry> get checkedEntries =>
@@ -64,6 +76,16 @@ class ShoppingViewModel extends ChangeNotifier {
   Item? itemFor(String itemId) =>
       _items.where((i) => i.id == itemId).firstOrNull;
 
+  Category? categoryFor(String categoryId) =>
+      _categories.where((c) => c.id == categoryId).firstOrNull;
+
+  List<Item> get availableItems {
+    final inList = _entries.map((e) => e.itemId).toSet();
+    return _items.where((i) => !inList.contains(i.id)).toList();
+  }
+
+  List<Category> get categories => List.unmodifiable(_categories);
+
   Future<void> load() async {
     final uid = _uid;
     if (uid == null) return;
@@ -74,11 +96,13 @@ class ShoppingViewModel extends ChangeNotifier {
         _listRepository.getLists(uid),
         _entryRepository.getEntries(uid, _listId),
         _itemRepository.getItems(uid),
+        _categoryRepository.getCategories(uid),
       ]);
       final lists = results[0] as List<ShoppingList>;
       _list = lists.where((l) => l.id == _listId).firstOrNull;
       _entries = results[1] as List<ListEntry>;
       _items = results[2] as List<Item>;
+      _categories = results[3] as List<Category>;
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -129,10 +153,31 @@ class ShoppingViewModel extends ChangeNotifier {
 
   Future<bool> finishShopping() async {
     final uid = _uid;
-    if (uid == null) return false;
+    final list = _list;
+    if (uid == null || list == null) return false;
     _isFinishing = true;
     notifyListeners();
     try {
+      final recordEntries = checkedEntries.map((entry) {
+        final item = itemFor(entry.itemId);
+        return PurchaseRecordEntry(
+          itemId: entry.itemId,
+          itemName: item?.name ?? 'Item desconhecido',
+          unit: item?.unit ?? 'un',
+          quantity: entry.quantity,
+        );
+      }).toList();
+
+      final record = PurchaseRecord(
+        id: '',
+        listId: list.id,
+        listName: list.name,
+        completedAt: DateTime.now(),
+        ownerId: uid,
+        entries: recordEntries,
+      );
+
+      await _purchaseRecordRepository.createRecord(uid, record);
       await _listRepository.archiveList(uid, _listId);
       _entryRepository.invalidateCache(_listId);
       return true;
