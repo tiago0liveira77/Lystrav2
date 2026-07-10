@@ -1,0 +1,52 @@
+name: lystra
+description: Shared shopping list management SaaS app.
+publish_to: none
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.4.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Firebase
+  firebase_core: ^3.6.0
+  firebase_auth: ^5.3.0
+  cloud_firestore: ^5.4.0
+  firebase_messaging: ^15.1.0
+
+  # Dependency Injection
+  get_it: ^8.0.0
+
+  # Navigation
+  go_router: ^14.3.0
+
+  # Domain models (immutable, code-generated)
+  freezed_annotation: ^2.4.0
+  json_annotation: ^4.9.0
+
+  # UI
+  google_fonts: ^6.2.0
+  shimmer: ^3.0.0
+
+  # Secure storage for theme preference and sensitive tokens
+  flutter_secure_storage: ^9.2.0
+
+  # In-app purchases (Fase 3 — RevenueCat)
+  purchases_flutter: ^10.4.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+  build_runner: ^2.4.0
+  freezed: ^2.5.0
+  json_serializable: ^6.8.0
+  mockito: ^5.4.4
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/animations/
+    - assets/illustrations/
