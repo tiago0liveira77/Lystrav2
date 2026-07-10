@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "635264481247",
+    "project_id": "lystrav2",
+    "storage_bucket": "lystrav2.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:635264481247:android:735b6a2db374989b7f366a",
+        "android_client_info": {
+          "package_name": "com.lystra.lystra"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAS1ytQ_cjCoiVOZ5P4_SDBApbgYtJjseM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
