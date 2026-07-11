@@ -44,9 +44,21 @@ dev_dependencies:
   freezed: ^2.5.0
   json_serializable: ^6.8.0
   mockito: ^5.4.4
+  flutter_launcher_icons: ^0.14.1
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icons/logo.png"
+  min_sdk_android: 21
+  adaptive_icon_background: "#1B8C5E"
+  adaptive_icon_foreground: "assets/icons/logo.png"
+  web:
+    generate: false
 
 flutter:
   uses-material-design: true
   assets:
+    - assets/icons/
     - assets/animations/
     - assets/illustrations/
