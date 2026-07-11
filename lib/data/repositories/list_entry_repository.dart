@@ -9,14 +9,17 @@ class ListEntryRepository {
   final FirestoreService _firestore;
   final Map<String, List<ListEntry>> _cache = {};
 
-  String _path(String uid, String listId) =>
-      'users/$uid/lists/$listId/entries';
+  String _path(String uid, String listId, {String? householdId}) =>
+      householdId != null
+          ? 'households/$householdId/lists/$listId/entries'
+          : 'users/$uid/lists/$listId/entries';
 
-  Future<List<ListEntry>> getEntries(String uid, String listId) async {
+  Future<List<ListEntry>> getEntries(String uid, String listId,
+      {String? householdId}) async {
     if (_cache.containsKey(listId)) return _cache[listId]!;
-    final snapshot =
-        await _firestore.getCollection(_path(uid, listId));
-    final entries = snapshot.docs
+    final snap = await _firestore.getCollection(
+        _path(uid, listId, householdId: householdId));
+    final entries = snap.docs
         .map((d) => ListEntryModel.fromFirestore(d).toDomain())
         .toList()
       ..sort((a, b) => a.addedAt.compareTo(b.addedAt));
@@ -29,9 +32,11 @@ class ListEntryRepository {
     String listId,
     String itemId, {
     double quantity = 1.0,
+    String? householdId,
   }) async {
     final now = DateTime.now();
-    final ref = await _firestore.addDoc(_path(uid, listId), {
+    final ref = await _firestore.addDoc(
+        _path(uid, listId, householdId: householdId), {
       'listId': listId,
       'itemId': itemId,
       'quantity': quantity,
@@ -53,7 +58,8 @@ class ListEntryRepository {
     return entry;
   }
 
-  Future<void> toggleEntry(String uid, String listId, String entryId) async {
+  Future<void> toggleEntry(String uid, String listId, String entryId,
+      {String? householdId}) async {
     final entries = _cache[listId];
     final entry = entries?.firstWhere((e) => e.id == entryId);
     if (entry == null) return;
@@ -63,16 +69,18 @@ class ListEntryRepository {
       checkedAt: !entry.isChecked ? DateTime.now() : null,
     );
     await _firestore.updateDoc(
-      '${_path(uid, listId)}/$entryId',
+      '${_path(uid, listId, householdId: householdId)}/$entryId',
       {'isChecked': updated.isChecked, 'checkedAt': updated.checkedAt},
     );
-    _cache[listId] = entries!.map((e) => e.id == entryId ? updated : e).toList();
+    _cache[listId] =
+        entries!.map((e) => e.id == entryId ? updated : e).toList();
   }
 
   Future<void> updateQuantity(
-      String uid, String listId, String entryId, double quantity) async {
+      String uid, String listId, String entryId, double quantity,
+      {String? householdId}) async {
     await _firestore.updateDoc(
-      '${_path(uid, listId)}/$entryId',
+      '${_path(uid, listId, householdId: householdId)}/$entryId',
       {'quantity': quantity},
     );
     _cache[listId] = _cache[listId]
@@ -81,23 +89,39 @@ class ListEntryRepository {
         [];
   }
 
-  Future<void> removeEntry(
-      String uid, String listId, String entryId) async {
-    await _firestore.deleteDoc('${_path(uid, listId)}/$entryId');
+  Future<void> removeEntry(String uid, String listId, String entryId,
+      {String? householdId}) async {
+    await _firestore.deleteDoc(
+        '${_path(uid, listId, householdId: householdId)}/$entryId');
     _cache[listId]?.removeWhere((e) => e.id == entryId);
   }
 
-  Future<void> resetEntries(String uid, String listId) async {
+  Future<void> resetEntries(String uid, String listId,
+      {String? householdId}) async {
     final entries = _cache[listId] ?? [];
     final checked = entries.where((e) => e.isChecked).toList();
     if (checked.isEmpty) return;
     await Future.wait(checked.map((e) => _firestore.updateDoc(
-          '${_path(uid, listId)}/${e.id}',
+          '${_path(uid, listId, householdId: householdId)}/${e.id}',
           {'isChecked': false, 'checkedAt': null},
         )));
     _cache[listId] = entries
         .map((e) => e.copyWith(isChecked: false, checkedAt: null))
         .toList();
+  }
+
+  Stream<List<ListEntry>> watchEntries(String uid, String listId,
+      {String? householdId}) {
+    return _firestore
+        .streamCollection(_path(uid, listId, householdId: householdId))
+        .map((snapshot) {
+      final entries = snapshot.docs
+          .map((d) => ListEntryModel.fromFirestore(d).toDomain())
+          .toList()
+        ..sort((a, b) => a.addedAt.compareTo(b.addedAt));
+      _cache[listId] = entries;
+      return entries;
+    });
   }
 
   void invalidateCache(String listId) => _cache.remove(listId);

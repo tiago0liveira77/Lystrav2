@@ -1,13 +1,17 @@
 import 'package:get_it/get_it.dart';
 import 'package:lystra/data/repositories/auth_repository.dart';
 import 'package:lystra/data/repositories/category_repository.dart';
+import 'package:lystra/data/repositories/household_repository.dart';
 import 'package:lystra/data/repositories/item_repository.dart';
 import 'package:lystra/data/repositories/list_entry_repository.dart';
 import 'package:lystra/data/repositories/purchase_record_repository.dart';
 import 'package:lystra/data/repositories/shopping_list_repository.dart';
+import 'package:lystra/data/repositories/user_repository.dart';
+import 'package:lystra/data/services/fcm_service.dart';
 import 'package:lystra/data/services/firebase_auth_service.dart';
 import 'package:lystra/data/services/firestore_service.dart';
 import 'package:lystra/data/services/seed_data_service.dart';
+import 'package:lystra/data/services/user_state.dart';
 import 'package:lystra/ui/features/auth/view_models/auth_view_model.dart';
 import 'package:lystra/ui/features/history/view_models/history_view_model.dart';
 import 'package:lystra/ui/features/items/view_models/items_view_model.dart';
@@ -23,10 +27,22 @@ void setupServiceLocator() {
   sl.registerLazySingleton<SeedDataService>(
     () => SeedDataService(firestoreService: sl()),
   );
+  sl.registerLazySingleton<FcmService>(
+    () => FcmService(userRepository: sl()),
+  );
+  sl.registerLazySingleton<UserState>(
+    () => UserState(userRepository: sl()),
+  );
 
   // 2. Repositories — singleton (maintain in-memory cache)
   sl.registerLazySingleton<AuthRepository>(
     () => AuthRepository(authService: sl()),
+  );
+  sl.registerLazySingleton<UserRepository>(
+    () => UserRepository(firestoreService: sl()),
+  );
+  sl.registerLazySingleton<HouseholdRepository>(
+    () => HouseholdRepository(firestoreService: sl()),
   );
   sl.registerLazySingleton<CategoryRepository>(
     () => CategoryRepository(firestoreService: sl()),
@@ -49,6 +65,7 @@ void setupServiceLocator() {
     () => AuthViewModel(
       authRepository: sl(),
       seedDataService: sl(),
+      userRepository: sl(),
     ),
   );
   sl.registerFactory<ListsViewModel>(
@@ -56,6 +73,7 @@ void setupServiceLocator() {
       listRepository: sl(),
       authRepository: sl(),
       entryRepository: sl(),
+      userState: sl(),
     ),
   );
   sl.registerFactory<ItemsViewModel>(
@@ -76,6 +94,9 @@ void setupServiceLocator() {
   sl.registerFactory<ProfileViewModel>(
     () => ProfileViewModel(
       authRepository: sl(),
+      userRepository: sl(),
+      userState: sl(),
+      householdRepository: sl(),
       seedDataService: sl(),
       categoryRepository: sl(),
       itemRepository: sl(),

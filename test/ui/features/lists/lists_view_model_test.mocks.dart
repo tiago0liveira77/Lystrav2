@@ -4,10 +4,13 @@
 
 // ignore_for_file: no_leading_underscores_for_library_prefixes
 import 'dart:async' as _i6;
+import 'dart:ui' as _i10;
 
 import 'package:lystra/data/repositories/auth_repository.dart' as _i7;
 import 'package:lystra/data/repositories/list_entry_repository.dart' as _i8;
 import 'package:lystra/data/repositories/shopping_list_repository.dart' as _i5;
+import 'package:lystra/data/repositories/user_repository.dart' as _i11;
+import 'package:lystra/data/services/user_state.dart' as _i9;
 import 'package:lystra/domain/models/app_user.dart' as _i3;
 import 'package:lystra/domain/models/list_entry.dart' as _i4;
 import 'package:lystra/domain/models/shopping_list.dart' as _i2;
@@ -103,6 +106,45 @@ class MockShoppingListRepository extends _i1.Mock
       ) as _i6.Future<_i2.ShoppingList>);
 
   @override
+  _i6.Future<List<_i2.ShoppingList>> getHouseholdLists(String? householdId) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #getHouseholdLists,
+          [householdId],
+        ),
+        returnValue:
+            _i6.Future<List<_i2.ShoppingList>>.value(<_i2.ShoppingList>[]),
+      ) as _i6.Future<List<_i2.ShoppingList>>);
+
+  @override
+  _i6.Future<_i2.ShoppingList> createHouseholdList(
+    String? householdId,
+    String? uid,
+    String? name,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #createHouseholdList,
+          [
+            householdId,
+            uid,
+            name,
+          ],
+        ),
+        returnValue: _i6.Future<_i2.ShoppingList>.value(_FakeShoppingList_0(
+          this,
+          Invocation.method(
+            #createHouseholdList,
+            [
+              householdId,
+              uid,
+              name,
+            ],
+          ),
+        )),
+      ) as _i6.Future<_i2.ShoppingList>);
+
+  @override
   _i6.Future<void> updateList(
     String? uid,
     _i2.ShoppingList? list,
@@ -122,8 +164,9 @@ class MockShoppingListRepository extends _i1.Mock
   @override
   _i6.Future<void> archiveList(
     String? uid,
-    String? listId,
-  ) =>
+    String? listId, {
+    String? householdId,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #archiveList,
@@ -131,6 +174,7 @@ class MockShoppingListRepository extends _i1.Mock
             uid,
             listId,
           ],
+          {#householdId: householdId},
         ),
         returnValue: _i6.Future<void>.value(),
         returnValueForMissingStub: _i6.Future<void>.value(),
@@ -139,8 +183,9 @@ class MockShoppingListRepository extends _i1.Mock
   @override
   _i6.Future<void> deleteList(
     String? uid,
-    String? listId,
-  ) =>
+    String? listId, {
+    String? householdId,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #deleteList,
@@ -148,6 +193,7 @@ class MockShoppingListRepository extends _i1.Mock
             uid,
             listId,
           ],
+          {#householdId: householdId},
         ),
         returnValue: _i6.Future<void>.value(),
         returnValueForMissingStub: _i6.Future<void>.value(),
@@ -158,6 +204,15 @@ class MockShoppingListRepository extends _i1.Mock
         Invocation.method(
           #invalidateCache,
           [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void invalidateHouseholdCache(String? householdId) => super.noSuchMethod(
+        Invocation.method(
+          #invalidateHouseholdCache,
+          [householdId],
         ),
         returnValueForMissingStub: null,
       );
@@ -253,8 +308,9 @@ class MockListEntryRepository extends _i1.Mock
   @override
   _i6.Future<List<_i4.ListEntry>> getEntries(
     String? uid,
-    String? listId,
-  ) =>
+    String? listId, {
+    String? householdId,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #getEntries,
@@ -262,6 +318,7 @@ class MockListEntryRepository extends _i1.Mock
             uid,
             listId,
           ],
+          {#householdId: householdId},
         ),
         returnValue: _i6.Future<List<_i4.ListEntry>>.value(<_i4.ListEntry>[]),
       ) as _i6.Future<List<_i4.ListEntry>>);
@@ -272,6 +329,7 @@ class MockListEntryRepository extends _i1.Mock
     String? listId,
     String? itemId, {
     double? quantity = 1.0,
+    String? householdId,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
@@ -281,7 +339,10 @@ class MockListEntryRepository extends _i1.Mock
             listId,
             itemId,
           ],
-          {#quantity: quantity},
+          {
+            #quantity: quantity,
+            #householdId: householdId,
+          },
         ),
         returnValue: _i6.Future<_i4.ListEntry>.value(_FakeListEntry_2(
           this,
@@ -292,7 +353,10 @@ class MockListEntryRepository extends _i1.Mock
               listId,
               itemId,
             ],
-            {#quantity: quantity},
+            {
+              #quantity: quantity,
+              #householdId: householdId,
+            },
           ),
         )),
       ) as _i6.Future<_i4.ListEntry>);
@@ -301,8 +365,9 @@ class MockListEntryRepository extends _i1.Mock
   _i6.Future<void> toggleEntry(
     String? uid,
     String? listId,
-    String? entryId,
-  ) =>
+    String? entryId, {
+    String? householdId,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #toggleEntry,
@@ -311,6 +376,7 @@ class MockListEntryRepository extends _i1.Mock
             listId,
             entryId,
           ],
+          {#householdId: householdId},
         ),
         returnValue: _i6.Future<void>.value(),
         returnValueForMissingStub: _i6.Future<void>.value(),
@@ -321,8 +387,9 @@ class MockListEntryRepository extends _i1.Mock
     String? uid,
     String? listId,
     String? entryId,
-    double? quantity,
-  ) =>
+    double? quantity, {
+    String? householdId,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #updateQuantity,
@@ -332,6 +399,7 @@ class MockListEntryRepository extends _i1.Mock
             entryId,
             quantity,
           ],
+          {#householdId: householdId},
         ),
         returnValue: _i6.Future<void>.value(),
         returnValueForMissingStub: _i6.Future<void>.value(),
@@ -341,8 +409,9 @@ class MockListEntryRepository extends _i1.Mock
   _i6.Future<void> removeEntry(
     String? uid,
     String? listId,
-    String? entryId,
-  ) =>
+    String? entryId, {
+    String? householdId,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #removeEntry,
@@ -351,6 +420,7 @@ class MockListEntryRepository extends _i1.Mock
             listId,
             entryId,
           ],
+          {#householdId: householdId},
         ),
         returnValue: _i6.Future<void>.value(),
         returnValueForMissingStub: _i6.Future<void>.value(),
@@ -359,8 +429,9 @@ class MockListEntryRepository extends _i1.Mock
   @override
   _i6.Future<void> resetEntries(
     String? uid,
-    String? listId,
-  ) =>
+    String? listId, {
+    String? householdId,
+  }) =>
       (super.noSuchMethod(
         Invocation.method(
           #resetEntries,
@@ -368,10 +439,29 @@ class MockListEntryRepository extends _i1.Mock
             uid,
             listId,
           ],
+          {#householdId: householdId},
         ),
         returnValue: _i6.Future<void>.value(),
         returnValueForMissingStub: _i6.Future<void>.value(),
       ) as _i6.Future<void>);
+
+  @override
+  _i6.Stream<List<_i4.ListEntry>> watchEntries(
+    String? uid,
+    String? listId, {
+    String? householdId,
+  }) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #watchEntries,
+          [
+            uid,
+            listId,
+          ],
+          {#householdId: householdId},
+        ),
+        returnValue: _i6.Stream<List<_i4.ListEntry>>.empty(),
+      ) as _i6.Stream<List<_i4.ListEntry>>);
 
   @override
   void invalidateCache(String? listId) => super.noSuchMethod(
@@ -390,4 +480,183 @@ class MockListEntryRepository extends _i1.Mock
         ),
         returnValueForMissingStub: null,
       );
+}
+
+/// A class which mocks [UserState].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockUserState extends _i1.Mock implements _i9.UserState {
+  MockUserState() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  bool get isPremium => (super.noSuchMethod(
+        Invocation.getter(#isPremium),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  bool get isLoaded => (super.noSuchMethod(
+        Invocation.getter(#isLoaded),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  bool get hasListeners => (super.noSuchMethod(
+        Invocation.getter(#hasListeners),
+        returnValue: false,
+      ) as bool);
+
+  @override
+  _i6.Future<void> loadForUser(_i3.AppUser? authUser) => (super.noSuchMethod(
+        Invocation.method(
+          #loadForUser,
+          [authUser],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  void updatePremium(bool? value) => super.noSuchMethod(
+        Invocation.method(
+          #updatePremium,
+          [value],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void updateHouseholdId(String? id) => super.noSuchMethod(
+        Invocation.method(
+          #updateHouseholdId,
+          [id],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void clear() => super.noSuchMethod(
+        Invocation.method(
+          #clear,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void addListener(_i10.VoidCallback? listener) => super.noSuchMethod(
+        Invocation.method(
+          #addListener,
+          [listener],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void removeListener(_i10.VoidCallback? listener) => super.noSuchMethod(
+        Invocation.method(
+          #removeListener,
+          [listener],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void dispose() => super.noSuchMethod(
+        Invocation.method(
+          #dispose,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
+  void notifyListeners() => super.noSuchMethod(
+        Invocation.method(
+          #notifyListeners,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+}
+
+/// A class which mocks [UserRepository].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockUserRepository extends _i1.Mock implements _i11.UserRepository {
+  MockUserRepository() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i6.Future<_i3.AppUser?> getUser(String? uid) => (super.noSuchMethod(
+        Invocation.method(
+          #getUser,
+          [uid],
+        ),
+        returnValue: _i6.Future<_i3.AppUser?>.value(),
+      ) as _i6.Future<_i3.AppUser?>);
+
+  @override
+  _i6.Future<void> createOrUpdate(_i3.AppUser? user) => (super.noSuchMethod(
+        Invocation.method(
+          #createOrUpdate,
+          [user],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> setPremium(
+    String? uid,
+    bool? value,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #setPremium,
+          [
+            uid,
+            value,
+          ],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> setHouseholdId(
+    String? uid,
+    String? householdId,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #setHouseholdId,
+          [
+            uid,
+            householdId,
+          ],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
+
+  @override
+  _i6.Future<void> saveFcmToken(
+    String? uid,
+    String? token,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #saveFcmToken,
+          [
+            uid,
+            token,
+          ],
+        ),
+        returnValue: _i6.Future<void>.value(),
+        returnValueForMissingStub: _i6.Future<void>.value(),
+      ) as _i6.Future<void>);
 }

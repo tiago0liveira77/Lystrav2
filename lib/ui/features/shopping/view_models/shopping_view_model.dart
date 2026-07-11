@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart' hide Category;
 import 'package:lystra/data/repositories/auth_repository.dart';
 import 'package:lystra/data/repositories/category_repository.dart';
@@ -14,6 +16,7 @@ import 'package:lystra/domain/models/shopping_list.dart';
 class ShoppingViewModel extends ChangeNotifier {
   ShoppingViewModel({
     required String listId,
+    this.householdId,
     required ListEntryRepository entryRepository,
     required ShoppingListRepository listRepository,
     required ItemRepository itemRepository,
@@ -29,12 +32,16 @@ class ShoppingViewModel extends ChangeNotifier {
         _categoryRepository = categoryRepository;
 
   final String _listId;
+  final String? householdId;
   final ListEntryRepository _entryRepository;
   final ShoppingListRepository _listRepository;
   final ItemRepository _itemRepository;
   final AuthRepository _authRepository;
   final PurchaseRecordRepository _purchaseRecordRepository;
   final CategoryRepository _categoryRepository;
+
+  // Real-time stream subscription (Phase 3 — household sync)
+  StreamSubscription<List<ListEntry>>? _entriesSubscription;
 
   ShoppingList? _list;
   ShoppingList? get list => _list;
@@ -92,9 +99,14 @@ class ShoppingViewModel extends ChangeNotifier {
     _isLoading = true;
     notifyListeners();
     try {
+      // Load list metadata from correct path
+      final listsFuture = householdId != null
+          ? _listRepository.getHouseholdLists(householdId!)
+          : _listRepository.getLists(uid);
+
       final results = await Future.wait([
-        _listRepository.getLists(uid),
-        _entryRepository.getEntries(uid, _listId),
+        listsFuture,
+        _entryRepository.getEntries(uid, _listId, householdId: householdId),
         _itemRepository.getItems(uid),
         _categoryRepository.getCategories(uid),
       ]);
@@ -103,16 +115,31 @@ class ShoppingViewModel extends ChangeNotifier {
       _entries = results[1] as List<ListEntry>;
       _items = results[2] as List<Item>;
       _categories = results[3] as List<Category>;
+
+      // Subscribe to real-time entry updates for multi-device/user sync
+      _entriesSubscription?.cancel();
+      _entriesSubscription = _entryRepository
+          .watchEntries(uid, _listId, householdId: householdId)
+          .listen((entries) {
+        _entries = entries;
+        notifyListeners();
+      });
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
 
+  @override
+  void dispose() {
+    _entriesSubscription?.cancel();
+    super.dispose();
+  }
+
   Future<void> toggleEntry(String entryId) async {
     final uid = _uid;
     if (uid == null) return;
-    // Optimistic update
+    // Optimistic update — stream confirms when Firestore acknowledges
     _entries = _entries.map((e) {
       if (e.id != entryId) return e;
       return e.copyWith(
@@ -121,19 +148,19 @@ class ShoppingViewModel extends ChangeNotifier {
       );
     }).toList();
     notifyListeners();
-
-    await _entryRepository.toggleEntry(uid, _listId, entryId);
+    await _entryRepository.toggleEntry(uid, _listId, entryId,
+        householdId: householdId);
   }
 
   Future<void> addItem(String itemId) async {
     final uid = _uid;
     if (uid == null) return;
-    final entry = await _entryRepository.addEntry(uid, _listId, itemId);
-    _entries = [..._entries, entry];
-    notifyListeners();
+    // Stream handles the UI update — no manual _entries mutation needed
+    // (avoids double-rebuild race that causes SliverList assertion)
+    await _entryRepository.addEntry(uid, _listId, itemId,
+        householdId: householdId);
   }
 
-  // Adds item if not in list; increments quantity if already present.
   Future<void> addOrIncrement(String itemId) async {
     final existing = entryForItem(itemId);
     if (existing != null) {
@@ -146,9 +173,12 @@ class ShoppingViewModel extends ChangeNotifier {
   Future<void> removeEntry(String entryId) async {
     final uid = _uid;
     if (uid == null) return;
-    _entries.removeWhere((e) => e.id == entryId);
+    // Optimistic removal so swipe animation completes instantly
+    _entries = _entries.where((e) => e.id != entryId).toList();
     notifyListeners();
-    await _entryRepository.removeEntry(uid, _listId, entryId);
+    await _entryRepository.removeEntry(uid, _listId, entryId,
+        householdId: householdId);
+    // Stream will confirm removal — no second manual notify needed
   }
 
   Future<void> updateQuantity(String entryId, double quantity) async {
@@ -158,7 +188,8 @@ class ShoppingViewModel extends ChangeNotifier {
         .map((e) => e.id == entryId ? e.copyWith(quantity: quantity) : e)
         .toList();
     notifyListeners();
-    await _entryRepository.updateQuantity(uid, _listId, entryId, quantity);
+    await _entryRepository.updateQuantity(uid, _listId, entryId, quantity,
+        householdId: householdId);
   }
 
   Future<bool> finishShopping() async {
@@ -188,8 +219,8 @@ class ShoppingViewModel extends ChangeNotifier {
       );
 
       await _purchaseRecordRepository.createRecord(uid, record);
-      // Reset entries to unchecked — list stays visible and reusable
-      await _entryRepository.resetEntries(uid, _listId);
+      await _entryRepository.resetEntries(uid, _listId,
+          householdId: householdId);
       _entries = _entries
           .map((e) => e.copyWith(isChecked: false, checkedAt: null))
           .toList();

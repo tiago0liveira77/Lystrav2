@@ -35,6 +35,10 @@ class FirestoreService {
   Future<void> updateDoc(String path, Map<String, dynamic> data) =>
       _db.doc(path).update(data);
 
+  // Creates the document if it doesn't exist; merges fields if it does.
+  Future<void> mergeDoc(String path, Map<String, dynamic> data) =>
+      _db.doc(path).set(data, SetOptions(merge: true));
+
   Future<void> deleteDoc(String path) => _db.doc(path).delete();
 
   Stream<QuerySnapshot<Map<String, dynamic>>> streamCollection(String path) =>

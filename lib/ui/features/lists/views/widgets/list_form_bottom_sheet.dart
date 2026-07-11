@@ -5,10 +5,12 @@ class ListFormBottomSheet extends StatefulWidget {
   const ListFormBottomSheet({
     super.key,
     this.initialName,
+    this.title,
     required this.onSubmit,
   });
 
   final String? initialName;
+  final String? title;
   final Future<void> Function(String name) onSubmit;
 
   @override
@@ -43,7 +45,7 @@ class _ListFormBottomSheetState extends State<ListFormBottomSheet> {
   Widget build(BuildContext context) {
     final isEdit = widget.initialName != null;
     return LystraBottomSheetContent(
-      title: isEdit ? 'Renomear lista' : 'Nova lista',
+      title: widget.title ?? (isEdit ? 'Renomear lista' : 'Nova lista'),
       action: FilledButton(
         onPressed: _isLoading ? null : _submit,
         child: _isLoading

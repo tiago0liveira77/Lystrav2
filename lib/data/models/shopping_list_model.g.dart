@@ -18,6 +18,7 @@ ShoppingListModel _$ShoppingListModelFromJson(Map<String, dynamic> json) =>
       createdAt: ShoppingListModel._dateTimeFromJson(json['createdAt']),
       updatedAt: ShoppingListModel._nullableDateTimeFromJson(json['updatedAt']),
       isArchived: json['isArchived'] as bool? ?? false,
+      householdId: json['householdId'] as String?,
     );
 
 Map<String, dynamic> _$ShoppingListModelToJson(ShoppingListModel instance) =>
@@ -30,4 +31,5 @@ Map<String, dynamic> _$ShoppingListModelToJson(ShoppingListModel instance) =>
       'updatedAt':
           ShoppingListModel._nullableDateTimeToJson(instance.updatedAt),
       'isArchived': instance.isArchived,
+      'householdId': instance.householdId,
     };

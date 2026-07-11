@@ -12,5 +12,8 @@ abstract class ShoppingList with _$ShoppingList {
     required DateTime createdAt,
     DateTime? updatedAt,
     @Default(false) bool isArchived,
+    // Non-null → household list at households/{householdId}/lists
+    // Null → personal list at users/{uid}/lists
+    String? householdId,
   }) = _ShoppingList;
 }

@@ -24,23 +24,68 @@ class _ListsViewState extends State<ListsView> {
     widget.viewModel.loadLists();
   }
 
-  void _showCreateSheet() {
+  void _showCreateSheet({bool household = false}) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       useSafeArea: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.xl)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppSpacing.xl)),
       ),
       builder: (_) => ListFormBottomSheet(
+        title: household ? 'Nova lista partilhada' : 'Nova lista',
         onSubmit: (name) async {
-          final list = await widget.viewModel.createList(name);
+          final list = household
+              ? await widget.viewModel.createHouseholdList(name)
+              : await widget.viewModel.createPersonalList(name);
           if (list != null && mounted) {
             Navigator.pop(context); // ignore: use_build_context_synchronously
           }
         },
       ),
     );
+  }
+
+  void _showCreateOptions() {
+    if (!widget.viewModel.isInHousehold) {
+      _showCreateSheet();
+      return;
+    }
+    showModalBottomSheet(
+      context: context,
+      builder: (_) => Padding(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.person_outline),
+              title: const Text('Lista pessoal'),
+              subtitle: const Text('Só tu tens acesso'),
+              onTap: () {
+                Navigator.pop(context);
+                _showCreateSheet();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.group_outlined),
+              title: const Text('Lista partilhada'),
+              subtitle: const Text('Visível a todos no household'),
+              onTap: () {
+                Navigator.pop(context);
+                _showCreateSheet(household: true);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _shopRoute(ShoppingList list) {
+    final base = '/lists/${list.id}/shop';
+    return list.householdId != null ? '$base?hid=${list.householdId}' : base;
   }
 
   @override
@@ -56,7 +101,7 @@ class _ListsViewState extends State<ListsView> {
                 actions: [
                   IconButton(
                     icon: const Icon(Icons.add),
-                    onPressed: _showCreateSheet,
+                    onPressed: _showCreateOptions,
                     tooltip: 'Nova lista',
                   ),
                 ],
@@ -67,7 +112,7 @@ class _ListsViewState extends State<ListsView> {
         },
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showCreateSheet,
+        onPressed: _showCreateOptions,
         icon: const Icon(Icons.add),
         label: const Text('Nova lista'),
       ),
@@ -98,35 +143,59 @@ class _ListsViewState extends State<ListsView> {
       );
     }
 
-    if (vm.lists.isEmpty) {
+    if (vm.allLists.isEmpty) {
       return SliverFillRemaining(
         child: EmptyStateWidget(
           icon: Icons.shopping_cart_outlined,
           headline: 'Nenhuma lista ainda',
           subtext: 'Cria a tua primeira lista de compras.',
           ctaLabel: 'Nova lista',
-          onCta: _showCreateSheet,
+          onCta: _showCreateOptions,
         ),
       );
     }
 
     return SliverPadding(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      sliver: SliverList.separated(
-        separatorBuilder: (_, __) =>
-            const SizedBox(height: AppSpacing.sm),
-        itemCount: vm.lists.length,
-        itemBuilder: (_, i) {
-          final list = vm.lists[i];
-          return ShoppingListCard(
-            shoppingList: list,
-            totalCount: vm.totalCountFor(list.id),
-            checkedCount: vm.checkedCountFor(list.id),
-            onTap: () => context.go('/lists/${list.id}/shop'),
-            onDelete: () => _confirmDelete(list),
-            onRename: () => _showRenameSheet(list),
-          );
-        },
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.md, 0, AppSpacing.md, AppSpacing.xxl),
+      sliver: SliverList(
+        delegate: SliverChildListDelegate([
+          // Personal lists
+          if (vm.personalLists.isNotEmpty) ...[
+            if (vm.isInHousehold)
+              _SectionHeader(
+                  Icons.person_outline, 'Pessoais'),
+            ...vm.personalLists.map((list) => Padding(
+                  padding:
+                      const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: ShoppingListCard(
+                    shoppingList: list,
+                    totalCount: vm.totalCountFor(list.id),
+                    checkedCount: vm.checkedCountFor(list.id),
+                    onTap: () => context.go(_shopRoute(list)),
+                    onDelete: () => _confirmDelete(list),
+                    onRename: () => _showRenameSheet(list),
+                  ),
+                )),
+          ],
+
+          // Household lists
+          if (vm.householdLists.isNotEmpty) ...[
+            _SectionHeader(Icons.group_outlined, 'Partilhadas'),
+            ...vm.householdLists.map((list) => Padding(
+                  padding:
+                      const EdgeInsets.only(bottom: AppSpacing.sm),
+                  child: ShoppingListCard(
+                    shoppingList: list,
+                    totalCount: vm.totalCountFor(list.id),
+                    checkedCount: vm.checkedCountFor(list.id),
+                    onTap: () => context.go(_shopRoute(list)),
+                    onDelete: () => _confirmDelete(list),
+                    onRename: () => _showRenameSheet(list),
+                  ),
+                )),
+          ],
+        ]),
       ),
     );
   }
@@ -145,7 +214,7 @@ class _ListsViewState extends State<ListsView> {
           TextButton(
             onPressed: () {
               Navigator.pop(dialogContext);
-              widget.viewModel.deleteList(list.id);
+              widget.viewModel.deleteList(list);
             },
             style: TextButton.styleFrom(
               foregroundColor: Theme.of(dialogContext).colorScheme.error,
@@ -163,7 +232,8 @@ class _ListsViewState extends State<ListsView> {
       isScrollControlled: true,
       useSafeArea: true,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.xl)),
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppSpacing.xl)),
       ),
       builder: (_) => ListFormBottomSheet(
         initialName: list.name,
@@ -171,6 +241,32 @@ class _ListsViewState extends State<ListsView> {
           await widget.viewModel.renameList(list, name);
           if (mounted) Navigator.pop(context); // ignore: use_build_context_synchronously
         },
+      ),
+    );
+  }
+}
+
+class _SectionHeader extends StatelessWidget {
+  const _SectionHeader(this.icon, this.label);
+  final IconData icon;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.xs, AppSpacing.md, AppSpacing.xs, AppSpacing.xs),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: theme.colorScheme.onSurfaceVariant),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            label,
+            style: theme.textTheme.labelLarge?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant),
+          ),
+        ],
       ),
     );
   }

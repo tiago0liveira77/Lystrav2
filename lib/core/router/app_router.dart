@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lystra/core/router/shell_scaffold.dart';
 import 'package:lystra/core/di/service_locator.dart';
+import 'package:lystra/data/repositories/auth_repository.dart';
+import 'package:lystra/data/services/user_state.dart';
 import 'package:lystra/ui/features/auth/views/login_view.dart';
 import 'package:lystra/ui/features/auth/views/register_view.dart';
 import 'package:lystra/ui/features/auth/view_models/auth_view_model.dart';
@@ -17,16 +19,26 @@ import 'package:lystra/ui/features/profile/view_models/profile_view_model.dart';
 import 'package:lystra/ui/features/profile/views/profile_view.dart';
 import 'package:lystra/ui/features/shopping/views/shopping_view.dart';
 
-// Bridges Firebase auth state stream into a ChangeNotifier so GoRouter
-// re-evaluates its redirect function on every auth state change.
 class _AuthRefreshNotifier extends ChangeNotifier {
   _AuthRefreshNotifier() {
-    _sub = FirebaseAuth.instance.authStateChanges().listen((_) {
-      notifyListeners();
-    });
+    _sub = FirebaseAuth.instance.authStateChanges().listen(_onAuthChanged);
   }
 
   late final StreamSubscription<User?> _sub;
+
+  Future<void> _onAuthChanged(User? firebaseUser) async {
+    final userState = sl<UserState>();
+    if (firebaseUser != null) {
+      // Load extended user data (isPremium, householdId) from Firestore
+      final authUser = sl<AuthRepository>().currentUser;
+      if (authUser != null) {
+        await userState.loadForUser(authUser);
+      }
+    } else {
+      userState.clear();
+    }
+    notifyListeners();
+  }
 
   @override
   void dispose() {
@@ -70,15 +82,18 @@ final appRouter = GoRouter(
         ),
         GoRoute(
           path: '/profile',
-          builder: (_, __) => ProfileView(viewModel: sl<ProfileViewModel>()),
+          builder: (_, __) =>
+              ProfileView(viewModel: sl<ProfileViewModel>()),
         ),
       ],
     ),
     // Shopping mode — full screen, outside shell (no NavigationBar)
+    // ?hid=<householdId> for household lists
     GoRoute(
       path: '/lists/:listId/shop',
       builder: (_, state) => ShoppingView(
         listId: state.pathParameters['listId']!,
+        householdId: state.uri.queryParameters['hid'],
       ),
     ),
   ],

@@ -22,7 +22,10 @@ mixin _$ShoppingList {
   List<String> get memberIds => throw _privateConstructorUsedError;
   DateTime get createdAt => throw _privateConstructorUsedError;
   DateTime? get updatedAt => throw _privateConstructorUsedError;
-  bool get isArchived => throw _privateConstructorUsedError;
+  bool get isArchived =>
+      throw _privateConstructorUsedError; // Non-null → household list at households/{householdId}/lists
+// Null → personal list at users/{uid}/lists
+  String? get householdId => throw _privateConstructorUsedError;
 
   /// Create a copy of ShoppingList
   /// with the given fields replaced by the non-null parameter values.
@@ -44,7 +47,8 @@ abstract class $ShoppingListCopyWith<$Res> {
       List<String> memberIds,
       DateTime createdAt,
       DateTime? updatedAt,
-      bool isArchived});
+      bool isArchived,
+      String? householdId});
 }
 
 /// @nodoc
@@ -69,6 +73,7 @@ class _$ShoppingListCopyWithImpl<$Res, $Val extends ShoppingList>
     Object? createdAt = null,
     Object? updatedAt = freezed,
     Object? isArchived = null,
+    Object? householdId = freezed,
   }) {
     return _then(_value.copyWith(
       id: null == id
@@ -99,6 +104,10 @@ class _$ShoppingListCopyWithImpl<$Res, $Val extends ShoppingList>
           ? _value.isArchived
           : isArchived // ignore: cast_nullable_to_non_nullable
               as bool,
+      householdId: freezed == householdId
+          ? _value.householdId
+          : householdId // ignore: cast_nullable_to_non_nullable
+              as String?,
     ) as $Val);
   }
 }
@@ -118,7 +127,8 @@ abstract class _$$ShoppingListImplCopyWith<$Res>
       List<String> memberIds,
       DateTime createdAt,
       DateTime? updatedAt,
-      bool isArchived});
+      bool isArchived,
+      String? householdId});
 }
 
 /// @nodoc
@@ -141,6 +151,7 @@ class __$$ShoppingListImplCopyWithImpl<$Res>
     Object? createdAt = null,
     Object? updatedAt = freezed,
     Object? isArchived = null,
+    Object? householdId = freezed,
   }) {
     return _then(_$ShoppingListImpl(
       id: null == id
@@ -171,6 +182,10 @@ class __$$ShoppingListImplCopyWithImpl<$Res>
           ? _value.isArchived
           : isArchived // ignore: cast_nullable_to_non_nullable
               as bool,
+      householdId: freezed == householdId
+          ? _value.householdId
+          : householdId // ignore: cast_nullable_to_non_nullable
+              as String?,
     ));
   }
 }
@@ -185,7 +200,8 @@ class _$ShoppingListImpl implements _ShoppingList {
       final List<String> memberIds = const [],
       required this.createdAt,
       this.updatedAt,
-      this.isArchived = false})
+      this.isArchived = false,
+      this.householdId})
       : _memberIds = memberIds;
 
   @override
@@ -210,10 +226,14 @@ class _$ShoppingListImpl implements _ShoppingList {
   @override
   @JsonKey()
   final bool isArchived;
+// Non-null → household list at households/{householdId}/lists
+// Null → personal list at users/{uid}/lists
+  @override
+  final String? householdId;
 
   @override
   String toString() {
-    return 'ShoppingList(id: $id, name: $name, ownerId: $ownerId, memberIds: $memberIds, createdAt: $createdAt, updatedAt: $updatedAt, isArchived: $isArchived)';
+    return 'ShoppingList(id: $id, name: $name, ownerId: $ownerId, memberIds: $memberIds, createdAt: $createdAt, updatedAt: $updatedAt, isArchived: $isArchived, householdId: $householdId)';
   }
 
   @override
@@ -231,7 +251,9 @@ class _$ShoppingListImpl implements _ShoppingList {
             (identical(other.updatedAt, updatedAt) ||
                 other.updatedAt == updatedAt) &&
             (identical(other.isArchived, isArchived) ||
-                other.isArchived == isArchived));
+                other.isArchived == isArchived) &&
+            (identical(other.householdId, householdId) ||
+                other.householdId == householdId));
   }
 
   @override
@@ -243,7 +265,8 @@ class _$ShoppingListImpl implements _ShoppingList {
       const DeepCollectionEquality().hash(_memberIds),
       createdAt,
       updatedAt,
-      isArchived);
+      isArchived,
+      householdId);
 
   /// Create a copy of ShoppingList
   /// with the given fields replaced by the non-null parameter values.
@@ -262,7 +285,8 @@ abstract class _ShoppingList implements ShoppingList {
       final List<String> memberIds,
       required final DateTime createdAt,
       final DateTime? updatedAt,
-      final bool isArchived}) = _$ShoppingListImpl;
+      final bool isArchived,
+      final String? householdId}) = _$ShoppingListImpl;
 
   @override
   String get id;
@@ -277,7 +301,11 @@ abstract class _ShoppingList implements ShoppingList {
   @override
   DateTime? get updatedAt;
   @override
-  bool get isArchived;
+  bool
+      get isArchived; // Non-null → household list at households/{householdId}/lists
+// Null → personal list at users/{uid}/lists
+  @override
+  String? get householdId;
 
   /// Create a copy of ShoppingList
   /// with the given fields replaced by the non-null parameter values.

@@ -27,7 +27,14 @@ class AppUserModel {
 
   factory AppUserModel.fromFirestore(DocumentSnapshot<Map<String, dynamic>> doc) {
     final data = doc.data() ?? {};
-    return AppUserModel.fromJson({...data, 'uid': doc.id});
+    // Provide defaults for fields that may be absent in partial documents
+    // (e.g. created via mergeDoc with only {'isPremium': true})
+    return AppUserModel.fromJson({
+      'email': '',
+      'isPremium': false,
+      ...data,
+      'uid': doc.id,
+    });
   }
 
   Map<String, dynamic> toJson() => _$AppUserModelToJson(this);

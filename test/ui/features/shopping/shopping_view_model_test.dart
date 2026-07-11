@@ -55,6 +55,8 @@ void main() {
 
     when(mockAuthRepo.currentUser).thenReturn(fakeUser);
     when(mockCategoryRepo.getCategories(uid)).thenAnswer((_) async => []);
+    when(mockEntryRepo.watchEntries(uid, listId))
+        .thenAnswer((_) => const Stream.empty());
 
     vm = ShoppingViewModel(
       listId: listId,

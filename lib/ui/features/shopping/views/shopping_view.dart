@@ -14,9 +14,10 @@ import 'package:lystra/ui/features/shopping/views/widgets/add_to_list_bottom_she
 import 'package:lystra/ui/features/shopping/views/widgets/shopping_item_row.dart';
 
 class ShoppingView extends StatefulWidget {
-  const ShoppingView({super.key, required this.listId});
+  const ShoppingView({super.key, required this.listId, this.householdId});
 
   final String listId;
+  final String? householdId;
 
   @override
   State<ShoppingView> createState() => _ShoppingViewState();
@@ -30,6 +31,7 @@ class _ShoppingViewState extends State<ShoppingView> {
     super.initState();
     _vm = ShoppingViewModel(
       listId: widget.listId,
+      householdId: widget.householdId,
       entryRepository: sl<ListEntryRepository>(),
       listRepository: sl<ShoppingListRepository>(),
       itemRepository: sl<ItemRepository>(),
@@ -166,22 +168,20 @@ class _ShoppingViewState extends State<ShoppingView> {
     final byCategory = _vm.entriesByCategory;
     if (byCategory.isEmpty && _vm.checkedEntries.isEmpty) {
       return SliverFillRemaining(
+        key: const ValueKey('shopping-empty'),
         child: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
               const Icon(Icons.shopping_cart_outlined, size: 64),
               const SizedBox(height: AppSpacing.md),
-              Text(
-                'Lista vazia',
-                style: Theme.of(context).textTheme.headlineSmall,
-              ),
+              Text('Lista vazia',
+                  style: Theme.of(context).textTheme.headlineSmall),
               const SizedBox(height: AppSpacing.sm),
               Text(
                 'Toca em "Adicionar item" para começar.',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
               ),
             ],
           ),
@@ -189,50 +189,49 @@ class _ShoppingViewState extends State<ShoppingView> {
       );
     }
 
-    final categoryIds = byCategory.keys.toList();
-    return SliverList.builder(
-      itemCount: categoryIds.length,
-      itemBuilder: (_, i) {
-        final catId = categoryIds[i];
-        final entries = byCategory[catId]!;
-        final categoryName = catId == 'uncategorized'
-            ? 'Sem categoria'
-            : (_vm.categoryFor(catId)?.name ?? 'Sem categoria');
+    // Build a flat list of widgets with stable keys for all elements
+    final children = <Widget>[];
+    for (final catId in byCategory.keys) {
+      final catName = catId == 'uncategorized'
+          ? 'Sem categoria'
+          : (_vm.categoryFor(catId)?.name ?? 'Sem categoria');
 
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xs),
-              child: Text(
-                categoryName,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
-            ),
-            ...entries.map((entry) {
-              final item = _vm.itemFor(entry.itemId);
-              if (item == null) return const SizedBox.shrink();
-              return ShoppingItemRow(
-                key: ValueKey(entry.id),
-                entry: entry,
-                item: item,
-                onToggle: () => _vm.toggleEntry(entry.id),
-                onRemove: () => _vm.removeEntry(entry.id),
-                onIncrease: () =>
-                    _vm.updateQuantity(entry.id, entry.quantity + 1),
-                categoryColorHex: _vm.categoryFor(item.categoryId)?.colorHex,
-              );
-            }),
-          ],
-        );
-      },
+      children.add(Padding(
+        key: ValueKey('hdr-$catId'),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.md, AppSpacing.md, AppSpacing.md, AppSpacing.xs),
+        child: Text(
+          catName,
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant),
+        ),
+      ));
+
+      for (final entry in byCategory[catId]!) {
+        final item = _vm.itemFor(entry.itemId);
+        if (item == null) continue;
+        children.add(ShoppingItemRow(
+          key: ValueKey(entry.id),
+          entry: entry,
+          item: item,
+          onToggle: () => _vm.toggleEntry(entry.id),
+          onRemove: () => _vm.removeEntry(entry.id),
+          onIncrease: () => _vm.updateQuantity(entry.id, entry.quantity + 1),
+          categoryColorHex: _vm.categoryFor(item.categoryId)?.colorHex,
+        ));
+      }
+    }
+
+    return SliverList(
+      key: const ValueKey('shopping-list'),
+      delegate: SliverChildListDelegate(children),
     );
   }
 
   Widget _buildCheckedSection() {
+    final checked = _vm.checkedEntries
+        .where((e) => _vm.itemFor(e.itemId) != null)
+        .toList();
     return SliverToBoxAdapter(
       child: ExpansionTile(
         title: Text(
@@ -242,9 +241,8 @@ class _ShoppingViewState extends State<ShoppingView> {
               ),
         ),
         initiallyExpanded: false,
-        children: _vm.checkedEntries.map((entry) {
-          final item = _vm.itemFor(entry.itemId);
-          if (item == null) return const SizedBox.shrink();
+        children: checked.map((entry) {
+          final item = _vm.itemFor(entry.itemId)!;
           return ShoppingItemRow(
             key: ValueKey('checked_${entry.id}'),
             entry: entry,

@@ -226,6 +226,23 @@ class MockFirestoreService extends _i1.Mock implements _i3.FirestoreService {
       ) as _i4.Future<void>);
 
   @override
+  _i4.Future<void> mergeDoc(
+    String? path,
+    Map<String, dynamic>? data,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #mergeDoc,
+          [
+            path,
+            data,
+          ],
+        ),
+        returnValue: _i4.Future<void>.value(),
+        returnValueForMissingStub: _i4.Future<void>.value(),
+      ) as _i4.Future<void>);
+
+  @override
   _i4.Future<void> deleteDoc(String? path) => (super.noSuchMethod(
         Invocation.method(
           #deleteDoc,

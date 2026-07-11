@@ -14,6 +14,7 @@ class ShoppingListModel {
     required this.createdAt,
     this.updatedAt,
     this.isArchived = false,
+    this.householdId,
   });
 
   final String id;
@@ -25,6 +26,7 @@ class ShoppingListModel {
   @JsonKey(fromJson: _nullableDateTimeFromJson, toJson: _nullableDateTimeToJson)
   final DateTime? updatedAt;
   final bool isArchived;
+  final String? householdId;
 
   factory ShoppingListModel.fromJson(Map<String, dynamic> json) =>
       _$ShoppingListModelFromJson(json);
@@ -47,6 +49,7 @@ class ShoppingListModel {
         createdAt: createdAt,
         updatedAt: updatedAt,
         isArchived: isArchived,
+        householdId: householdId,
       );
 
   factory ShoppingListModel.fromDomain(ShoppingList list) => ShoppingListModel(
@@ -57,6 +60,7 @@ class ShoppingListModel {
         createdAt: list.createdAt,
         updatedAt: list.updatedAt,
         isArchived: list.isArchived,
+        householdId: list.householdId,
       );
 
   static DateTime _dateTimeFromJson(dynamic value) {
