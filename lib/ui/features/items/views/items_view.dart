@@ -64,9 +64,12 @@ class _ItemsViewState extends State<ItemsView> {
         onCreateCategory: (name, colorHex) =>
             widget.viewModel.createCategory(name, colorHex),
         onSubmit: (name, categoryId, unit, emoji) async {
-          await widget.viewModel.createItem(name, categoryId, unit,
+          final newItem = await widget.viewModel.createItem(
+              name, categoryId, unit,
               emoji: emoji);
-          if (mounted) Navigator.pop(context); // ignore: use_build_context_synchronously
+          if (!mounted) return; // ignore: use_build_context_synchronously
+          Navigator.pop(context);
+          if (newItem != null) _showQuickAddSheet(newItem);
         },
       ),
     );
