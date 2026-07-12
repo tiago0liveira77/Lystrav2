@@ -32,8 +32,6 @@ class _ShoppingItemRowState extends State<ShoppingItemRow>
   late AnimationController _controller;
   late Animation<double> _scaleAnim;
   late Animation<double> _strikethroughAnim;
-  late Animation<double> _opacityAnim;
-  late Animation<double> _tintAnim;
 
   @override
   void initState() {
@@ -51,19 +49,9 @@ class _ShoppingItemRowState extends State<ShoppingItemRow>
       curve: const Interval(0, 0.7, curve: Curves.elasticOut),
     ));
 
-    _tintAnim = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0, 0.45),
-    ));
-
     _strikethroughAnim = Tween(begin: 0.0, end: 1.0).animate(CurvedAnimation(
       parent: _controller,
       curve: const Interval(0.2, 0.7, curve: Curves.easeInOut),
-    ));
-
-    _opacityAnim = Tween(begin: 1.0, end: 0.6).animate(CurvedAnimation(
-      parent: _controller,
-      curve: const Interval(0, 0.5),
     ));
 
     if (widget.entry.isChecked) _controller.value = 1.0;
@@ -113,19 +101,133 @@ class _ShoppingItemRowState extends State<ShoppingItemRow>
     return qty.toStringAsFixed(1);
   }
 
+  Widget _buildContent(ColorScheme scheme, TextTheme textTheme, Color dotColor,
+      bool isChecked) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+      child: Row(
+        children: [
+          Opacity(
+            opacity: isChecked ? 0.4 : 1.0,
+            child: widget.item.emoji != null
+                ? SizedBox(
+                    width: 28,
+                    child: Text(widget.item.emoji!,
+                        style: const TextStyle(fontSize: 20),
+                        textAlign: TextAlign.center),
+                  )
+                : Container(
+                    width: 8,
+                    height: 8,
+                    decoration: BoxDecoration(
+                      color: dotColor,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Stack(
+              alignment: Alignment.centerLeft,
+              children: [
+                Text(
+                  widget.item.name,
+                  style: textTheme.titleMedium?.copyWith(
+                    color: isChecked
+                        ? scheme.onSurfaceVariant
+                        : scheme.onSurface,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (_strikethroughAnim.value > 0)
+                  LayoutBuilder(builder: (ctx, constraints) {
+                    return Positioned(
+                      left: 0,
+                      right: constraints.maxWidth *
+                          (1 - _strikethroughAnim.value),
+                      top: 0,
+                      bottom: 0,
+                      child: Center(
+                        child: Container(
+                          height: 1.5,
+                          color: scheme.onSurfaceVariant,
+                        ),
+                      ),
+                    );
+                  }),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm, vertical: 2),
+            decoration: BoxDecoration(
+              color: scheme.tertiaryContainer,
+              borderRadius: BorderRadius.circular(AppRadius.full),
+            ),
+            child: Text(
+              '${_formatQty(widget.entry.quantity)} ${widget.item.unit}',
+              style: textTheme.labelSmall?.copyWith(
+                color: scheme.onTertiaryContainer,
+              ),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          GestureDetector(
+            onTap: _handleIncrease,
+            child: Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                color: scheme.primaryContainer,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(Icons.add, size: 16, color: scheme.primary),
+            ),
+          ),
+          const SizedBox(width: AppSpacing.sm),
+          ScaleTransition(
+            scale: _scaleAnim,
+            child: Icon(
+              isChecked
+                  ? Icons.check_circle
+                  : Icons.radio_button_unchecked,
+              color: isChecked ? scheme.primary : scheme.outline,
+              size: 26,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final scheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final dotColor = _categoryColor ?? scheme.primary;
+    final isChecked = widget.entry.isChecked;
 
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
+        // Checked: sem Dismissible nem InkWell — evita o background bleeding
+        // em dispositivos Samsung/Xiaomi dentro de ExpansionTile
+        if (isChecked) {
+          return GestureDetector(
+            onTap: _handleTap,
+            child: SizedBox(
+              height: 64,
+              child: _buildContent(scheme, textTheme, dotColor, isChecked),
+            ),
+          );
+        }
+
         return Dismissible(
           key: ValueKey(widget.entry.id),
           direction: DismissDirection.horizontal,
-          // Swipe right → increase quantity
           background: Container(
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.only(left: AppSpacing.lg),
@@ -141,7 +243,6 @@ class _ShoppingItemRowState extends State<ShoppingItemRow>
               ],
             ),
           ),
-          // Swipe left → delete
           secondaryBackground: Container(
             alignment: Alignment.centerRight,
             padding: const EdgeInsets.only(right: AppSpacing.lg),
@@ -156,125 +257,13 @@ class _ShoppingItemRowState extends State<ShoppingItemRow>
             }
             return false;
           },
-          child: Container(
-            height: 64,
-            color: Color.lerp(
-              Colors.transparent,
-              scheme.primaryContainer.withValues(alpha: 0.4),
-              _tintAnim.value,
-            ),
-            child: InkWell(
-              onTap: _handleTap,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: Row(
-                  children: [
-                    // Category dot or emoji
-                    widget.item.emoji != null
-                        ? SizedBox(
-                            width: 28,
-                            child: Text(widget.item.emoji!,
-                                style: const TextStyle(fontSize: 20),
-                                textAlign: TextAlign.center),
-                          )
-                        : Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: widget.entry.isChecked
-                                  ? scheme.primary
-                                  : dotColor,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                    const SizedBox(width: AppSpacing.md),
-
-                    // Item name with strikethrough
-                    Expanded(
-                      child: Opacity(
-                        opacity: _opacityAnim.value,
-                        child: Stack(
-                          alignment: Alignment.centerLeft,
-                          children: [
-                            Text(
-                              widget.item.name,
-                              style: textTheme.titleMedium,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            if (_strikethroughAnim.value > 0)
-                              LayoutBuilder(builder: (ctx, constraints) {
-                                return Positioned(
-                                  left: 0,
-                                  right: constraints.maxWidth *
-                                      (1 - _strikethroughAnim.value),
-                                  top: 0,
-                                  bottom: 0,
-                                  child: Center(
-                                    child: Container(
-                                      height: 1.5,
-                                      color: scheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                );
-                              }),
-                          ],
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: AppSpacing.xs),
-
-                    // Quantity + unit badge (always visible)
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm, vertical: 2),
-                      decoration: BoxDecoration(
-                        color: scheme.tertiaryContainer,
-                        borderRadius: BorderRadius.circular(AppRadius.full),
-                      ),
-                      child: Text(
-                        '${_formatQty(widget.entry.quantity)} ${widget.item.unit}',
-                        style: textTheme.labelSmall?.copyWith(
-                          color: scheme.onTertiaryContainer,
-                        ),
-                      ),
-                    ),
-
-                    const SizedBox(width: AppSpacing.xs),
-
-                    // "+" quick increase button
-                    GestureDetector(
-                      onTap: _handleIncrease,
-                      child: Container(
-                        width: 26,
-                        height: 26,
-                        decoration: BoxDecoration(
-                          color: scheme.primaryContainer,
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(Icons.add,
-                            size: 16, color: scheme.primary),
-                      ),
-                    ),
-
-                    const SizedBox(width: AppSpacing.sm),
-
-                    // Check/uncheck icon with bounce animation
-                    ScaleTransition(
-                      scale: _scaleAnim,
-                      child: Icon(
-                        widget.entry.isChecked
-                            ? Icons.check_circle
-                            : Icons.radio_button_unchecked,
-                        color: widget.entry.isChecked
-                            ? scheme.primary
-                            : scheme.outline,
-                        size: 26,
-                      ),
-                    ),
-                  ],
-                ),
+          child: ColoredBox(
+            color: scheme.surface,
+            child: SizedBox(
+              height: 64,
+              child: InkWell(
+                onTap: _handleTap,
+                child: _buildContent(scheme, textTheme, dotColor, isChecked),
               ),
             ),
           ),
