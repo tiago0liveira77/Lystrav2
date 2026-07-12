@@ -2,10 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:lystra/core/theme/app_spacing.dart';
 import 'package:lystra/domain/models/purchase_record.dart';
 
-class PurchaseRecordCard extends StatelessWidget {
-  const PurchaseRecordCard({super.key, required this.record});
+class PurchaseRecordCard extends StatefulWidget {
+  const PurchaseRecordCard({
+    super.key,
+    required this.record,
+    required this.onDelete,
+  });
 
   final PurchaseRecord record;
+  final VoidCallback onDelete;
+
+  @override
+  State<PurchaseRecordCard> createState() => _PurchaseRecordCardState();
+}
+
+class _PurchaseRecordCardState extends State<PurchaseRecordCard> {
+  bool _isExpanded = false;
 
   String _formatDate(DateTime date) =>
       '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
@@ -21,11 +33,14 @@ class PurchaseRecordCard extends StatelessWidget {
         vertical: AppSpacing.xs,
       ),
       child: ExpansionTile(
-        tilePadding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md,
-          vertical: AppSpacing.xs,
+        tilePadding: const EdgeInsets.only(
+          left: AppSpacing.md,
+          right: AppSpacing.xs,
+          top: AppSpacing.xs,
+          bottom: AppSpacing.xs,
         ),
         childrenPadding: const EdgeInsets.only(bottom: AppSpacing.sm),
+        onExpansionChanged: (v) => setState(() => _isExpanded = v),
         leading: CircleAvatar(
           backgroundColor: scheme.primaryContainer,
           child: Icon(
@@ -35,16 +50,33 @@ class PurchaseRecordCard extends StatelessWidget {
           ),
         ),
         title: Text(
-          record.listName,
+          widget.record.listName,
           style: theme.textTheme.titleMedium,
         ),
         subtitle: Text(
-          '${_formatDate(record.completedAt)} · ${record.entries.length} ${record.entries.length == 1 ? 'item' : 'items'}',
+          '${_formatDate(widget.record.completedAt)} · ${widget.record.entries.length} ${widget.record.entries.length == 1 ? 'item' : 'items'}',
           style: theme.textTheme.bodySmall?.copyWith(
             color: scheme.onSurfaceVariant,
           ),
         ),
-        children: record.entries.map((entry) => _EntryRow(entry: entry)).toList(),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: Icon(Icons.delete_outline, color: scheme.error, size: 20),
+              onPressed: widget.onDelete,
+              visualDensity: VisualDensity.compact,
+              tooltip: 'Apagar registo',
+            ),
+            AnimatedRotation(
+              turns: _isExpanded ? 0.5 : 0,
+              duration: const Duration(milliseconds: 200),
+              child: Icon(Icons.expand_more, color: scheme.onSurfaceVariant),
+            ),
+          ],
+        ),
+        children:
+            widget.record.entries.map((e) => _EntryRow(entry: e)).toList(),
       ),
     );
   }
@@ -71,17 +103,10 @@ class _EntryRow extends StatelessWidget {
       ),
       child: Row(
         children: [
-          Icon(
-            Icons.circle,
-            size: 6,
-            color: scheme.primary,
-          ),
+          Icon(Icons.circle, size: 6, color: scheme.primary),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
-            child: Text(
-              entry.itemName,
-              style: theme.textTheme.bodyMedium,
-            ),
+            child: Text(entry.itemName, style: theme.textTheme.bodyMedium),
           ),
           Container(
             padding: const EdgeInsets.symmetric(

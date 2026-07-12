@@ -29,6 +29,32 @@ class _HistoryViewState extends State<HistoryView> {
     super.dispose();
   }
 
+  Future<void> _confirmDelete(BuildContext context, String recordId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (d) => AlertDialog(
+        title: const Text('Apagar registo'),
+        content: const Text(
+            'Este registo de histórico será apagado permanentemente. Continuar?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(d, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: Theme.of(context).colorScheme.error,
+              foregroundColor: Theme.of(context).colorScheme.onError,
+            ),
+            onPressed: () => Navigator.pop(d, true),
+            child: const Text('Apagar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) await _vm.deleteRecord(recordId);
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
@@ -114,7 +140,10 @@ class _HistoryViewState extends State<HistoryView> {
       slivers.add(
         SliverList(
           delegate: SliverChildBuilderDelegate(
-            (_, i) => PurchaseRecordCard(record: records[i]),
+            (_, i) => PurchaseRecordCard(
+              record: records[i],
+              onDelete: () => _confirmDelete(context, records[i].id),
+            ),
             childCount: records.length,
           ),
         ),

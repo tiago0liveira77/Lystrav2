@@ -30,5 +30,10 @@ class PurchaseRecordRepository {
     return saved;
   }
 
+  Future<void> deleteRecord(String uid, String recordId) async {
+    await _firestore.deleteDoc('${_path(uid)}/$recordId');
+    _cache?.removeWhere((r) => r.id == recordId);
+  }
+
   void invalidateCache() => _cache = null;
 }

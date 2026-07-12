@@ -46,6 +46,14 @@ class HistoryViewModel extends ChangeNotifier {
   List<PurchaseRecord> recordsForMonth(String monthKey) =>
       _records.where((r) => monthLabel(r.completedAt) == monthKey).toList();
 
+  Future<void> deleteRecord(String recordId) async {
+    final uid = _uid;
+    if (uid == null) return;
+    await _recordRepository.deleteRecord(uid, recordId);
+    _records = _records.where((r) => r.id != recordId).toList();
+    notifyListeners();
+  }
+
   Future<void> loadRecords() async {
     final uid = _uid;
     if (uid == null) return;
