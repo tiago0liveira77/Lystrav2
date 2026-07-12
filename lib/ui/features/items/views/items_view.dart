@@ -3,6 +3,7 @@ import 'package:lystra/core/theme/app_spacing.dart';
 import 'package:lystra/domain/models/item.dart';
 import 'package:lystra/ui/core/widgets/empty_state_widget.dart';
 import 'package:lystra/ui/core/widgets/skeleton_list_tile.dart';
+import 'package:lystra/ui/features/catalog/views/catalog_browse_view.dart';
 import 'package:lystra/ui/features/items/view_models/items_view_model.dart';
 import 'package:lystra/ui/features/items/views/widgets/category_chip.dart';
 import 'package:lystra/ui/features/items/views/widgets/item_form_bottom_sheet.dart';
@@ -48,6 +49,15 @@ class _ItemsViewState extends State<ItemsView> {
       result.add(item);
     }
     return result;
+  }
+
+  Future<void> _openCatalog() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CatalogBrowseView()),
+    );
+    // Refresh items in case the user added from catalog
+    if (mounted) widget.viewModel.load();
   }
 
   void _showCreateSheet() {
@@ -202,10 +212,24 @@ class _ItemsViewState extends State<ItemsView> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _showCreateSheet,
-        icon: const Icon(Icons.add),
-        label: const Text('Novo item'),
+      floatingActionButton: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FloatingActionButton.small(
+            heroTag: 'fab_catalog',
+            onPressed: _openCatalog,
+            tooltip: 'Explorar catálogo',
+            child: const Icon(Icons.grid_view_rounded),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          FloatingActionButton.extended(
+            heroTag: 'fab_new_item',
+            onPressed: _showCreateSheet,
+            icon: const Icon(Icons.add),
+            label: const Text('Novo item'),
+          ),
+        ],
       ),
     );
   }
