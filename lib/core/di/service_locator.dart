@@ -10,6 +10,7 @@ import 'package:lystra/data/repositories/user_repository.dart';
 import 'package:lystra/data/services/fcm_service.dart';
 import 'package:lystra/data/services/firebase_auth_service.dart';
 import 'package:lystra/data/services/firestore_service.dart';
+import 'package:lystra/data/services/list_template_service.dart';
 import 'package:lystra/data/services/seed_data_service.dart';
 import 'package:lystra/data/services/user_state.dart';
 import 'package:lystra/ui/features/auth/view_models/auth_view_model.dart';
@@ -32,6 +33,13 @@ void setupServiceLocator() {
   );
   sl.registerLazySingleton<UserState>(
     () => UserState(userRepository: sl()),
+  );
+  sl.registerLazySingleton<ListTemplateService>(
+    () => ListTemplateService(
+      categoryRepository: sl(),
+      itemRepository: sl(),
+      entryRepository: sl(),
+    ),
   );
 
   // 2. Repositories — singleton (maintain in-memory cache)
@@ -74,6 +82,7 @@ void setupServiceLocator() {
       authRepository: sl(),
       entryRepository: sl(),
       userState: sl(),
+      templateService: sl(),
     ),
   );
   sl.registerFactory<ItemsViewModel>(

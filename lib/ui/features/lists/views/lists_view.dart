@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lystra/core/theme/app_spacing.dart';
+import 'package:lystra/data/services/list_templates_data.dart';
 import 'package:lystra/domain/models/shopping_list.dart';
 import 'package:lystra/ui/core/widgets/empty_state_widget.dart';
 import 'package:lystra/ui/core/widgets/skeleton_list_tile.dart';
 import 'package:lystra/ui/features/lists/view_models/lists_view_model.dart';
 import 'package:lystra/ui/features/lists/views/widgets/list_form_bottom_sheet.dart';
 import 'package:lystra/ui/features/lists/views/widgets/shopping_list_card.dart';
+import 'package:lystra/ui/features/lists/views/widgets/template_picker_sheet.dart';
 
 class ListsView extends StatefulWidget {
   const ListsView({super.key, required this.viewModel});
@@ -48,10 +50,6 @@ class _ListsViewState extends State<ListsView> {
   }
 
   void _showCreateOptions() {
-    if (!widget.viewModel.isInHousehold) {
-      _showCreateSheet();
-      return;
-    }
     showModalBottomSheet(
       context: context,
       builder: (_) => Padding(
@@ -68,19 +66,96 @@ class _ListsViewState extends State<ListsView> {
                 _showCreateSheet();
               },
             ),
+            if (widget.viewModel.isInHousehold)
+              ListTile(
+                leading: const Icon(Icons.group_outlined),
+                title: const Text('Lista partilhada'),
+                subtitle: const Text('Visível a todos no household'),
+                onTap: () {
+                  Navigator.pop(context);
+                  _showCreateSheet(household: true);
+                },
+              ),
             ListTile(
-              leading: const Icon(Icons.group_outlined),
-              title: const Text('Lista partilhada'),
-              subtitle: const Text('Visível a todos no household'),
+              leading: const Icon(Icons.list_alt_rounded),
+              title: const Text('A partir de modelo'),
+              subtitle: const Text('Lista pré-definida com items incluídos'),
               onTap: () {
                 Navigator.pop(context);
-                _showCreateSheet(household: true);
+                _showTemplatePicker();
               },
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _showTemplatePicker() async {
+    final template = await showModalBottomSheet<ListTemplate>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppSpacing.xl)),
+      ),
+      builder: (_) => const TemplatePickerSheet(),
+    );
+    if (template == null || !mounted) return;
+    await _applyTemplate(template); // ignore: use_build_context_synchronously
+  }
+
+  Future<void> _applyTemplate(ListTemplate template) async {
+    // The dialog is a StatefulWidget so it owns and disposes the controller
+    // at the correct moment — avoids the use-after-dispose race with focus cleanup.
+    final name = await showDialog<String>(
+      context: context,
+      builder: (_) => _ListNameDialog(initialName: template.name),
+    );
+    if (name == null || name.isEmpty || !mounted) return;
+
+    // Use a SnackBar (not a dialog) for the loading state so there is no
+    // navigator route to pop before go_router navigates — avoids the race
+    // that causes a black screen.
+    // ignore: use_build_context_synchronously
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.showSnackBar(
+      SnackBar(
+        duration: const Duration(minutes: 2),
+        content: Row(
+          children: [
+            const SizedBox(
+              width: 18,
+              height: 18,
+              child: CircularProgressIndicator(
+                  strokeWidth: 2, color: Colors.white),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Text('A criar lista de ${template.name.toLowerCase()}...'),
+          ],
+        ),
+      ),
+    );
+
+    final result = await widget.viewModel // ignore: use_build_context_synchronously
+        .createListFromTemplate(name, template);
+
+    messenger.hideCurrentSnackBar();
+    if (!mounted) return;
+
+    if (result == null) return;
+    final (list, newItems) = result;
+    // ignore: use_build_context_synchronously
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(newItems > 0
+            ? 'Lista criada! $newItems items novos no catálogo'
+            : 'Lista criada com ${template.totalItems} items'),
+      ),
+    );
+    // ignore: use_build_context_synchronously
+    context.go(_shopRoute(list));
   }
 
   String _shopRoute(ShoppingList list) {
@@ -242,6 +317,54 @@ class _ListsViewState extends State<ListsView> {
           if (mounted) Navigator.pop(context); // ignore: use_build_context_synchronously
         },
       ),
+    );
+  }
+}
+
+class _ListNameDialog extends StatefulWidget {
+  const _ListNameDialog({required this.initialName});
+  final String initialName;
+
+  @override
+  State<_ListNameDialog> createState() => _ListNameDialogState();
+}
+
+class _ListNameDialogState extends State<_ListNameDialog> {
+  late final TextEditingController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = TextEditingController(text: widget.initialName);
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: const Text('Nova lista'),
+      content: TextField(
+        controller: _controller,
+        autofocus: true,
+        textCapitalization: TextCapitalization.sentences,
+        decoration: const InputDecoration(labelText: 'Nome da lista'),
+        onSubmitted: (_) => Navigator.pop(context, _controller.text.trim()),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, null),
+          child: const Text('Cancelar'),
+        ),
+        FilledButton(
+          onPressed: () => Navigator.pop(context, _controller.text.trim()),
+          child: const Text('Criar'),
+        ),
+      ],
     );
   }
 }

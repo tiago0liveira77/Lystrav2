@@ -93,6 +93,23 @@ class MockPurchaseRecordRepository extends _i1.Mock
       ) as _i5.Future<_i2.PurchaseRecord>);
 
   @override
+  _i5.Future<void> deleteRecord(
+    String? uid,
+    String? recordId,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #deleteRecord,
+          [
+            uid,
+            recordId,
+          ],
+        ),
+        returnValue: _i5.Future<void>.value(),
+        returnValueForMissingStub: _i5.Future<void>.value(),
+      ) as _i5.Future<void>);
+
+  @override
   void invalidateCache() => super.noSuchMethod(
         Invocation.method(
           #invalidateCache,

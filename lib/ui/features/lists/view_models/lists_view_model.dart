@@ -2,6 +2,8 @@ import 'package:flutter/foundation.dart';
 import 'package:lystra/data/repositories/auth_repository.dart';
 import 'package:lystra/data/repositories/list_entry_repository.dart';
 import 'package:lystra/data/repositories/shopping_list_repository.dart';
+import 'package:lystra/data/services/list_template_service.dart';
+import 'package:lystra/data/services/list_templates_data.dart';
 import 'package:lystra/data/services/user_state.dart';
 import 'package:lystra/domain/models/list_entry.dart';
 import 'package:lystra/domain/models/shopping_list.dart';
@@ -14,10 +16,12 @@ class ListsViewModel extends ChangeNotifier {
     required AuthRepository authRepository,
     required ListEntryRepository entryRepository,
     required UserState userState,
+    required ListTemplateService templateService,
   })  : _listRepository = listRepository,
         _authRepository = authRepository,
         _entryRepository = entryRepository,
-        _userState = userState {
+        _userState = userState,
+        _templateService = templateService {
     // Reload household lists if UserState loads householdId after initial loadLists()
     _userState.addListener(_onUserStateChanged);
   }
@@ -26,6 +30,7 @@ class ListsViewModel extends ChangeNotifier {
   final AuthRepository _authRepository;
   final ListEntryRepository _entryRepository;
   final UserState _userState;
+  final ListTemplateService _templateService;
 
   List<ShoppingList> _personalLists = [];
   List<ShoppingList> _householdLists = [];
@@ -143,6 +148,25 @@ class ListsViewModel extends ChangeNotifier {
       _entriesPerList[list.id] = [];
       notifyListeners();
       return list;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // --- Template-based list creation ---
+
+  Future<(ShoppingList, int)?> createListFromTemplate(
+      String name, ListTemplate template) async {
+    final uid = _uid;
+    if (uid == null || name.trim().isEmpty) return null;
+    try {
+      final list = await _listRepository.createList(uid, name);
+      _personalLists = [list, ..._personalLists];
+      _entriesPerList[list.id] = [];
+      notifyListeners();
+      final newItemCount =
+          await _templateService.applyTemplate(uid, list.id, template);
+      return (list, newItemCount);
     } catch (_) {
       return null;
     }

@@ -2,6 +2,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:lystra/data/repositories/auth_repository.dart';
 import 'package:lystra/data/repositories/list_entry_repository.dart';
 import 'package:lystra/data/repositories/shopping_list_repository.dart';
+import 'package:lystra/data/services/list_template_service.dart';
 import 'package:lystra/data/services/user_state.dart';
 import 'package:lystra/data/repositories/user_repository.dart';
 import 'package:lystra/domain/models/app_user.dart';
@@ -18,12 +19,14 @@ import 'lists_view_model_test.mocks.dart';
   ListEntryRepository,
   UserState,
   UserRepository,
+  ListTemplateService,
 ])
 void main() {
   late MockShoppingListRepository mockListRepo;
   late MockAuthRepository mockAuthRepo;
   late MockListEntryRepository mockEntryRepo;
   late MockUserState mockUserState;
+  late MockListTemplateService mockTemplateService;
   late ListsViewModel vm;
 
   const uid = 'user-1';
@@ -34,6 +37,7 @@ void main() {
     mockAuthRepo = MockAuthRepository();
     mockEntryRepo = MockListEntryRepository();
     mockUserState = MockUserState();
+    mockTemplateService = MockListTemplateService();
 
     when(mockAuthRepo.currentUser).thenReturn(fakeUser);
     when(mockUserState.householdId).thenReturn(null);
@@ -44,6 +48,7 @@ void main() {
       authRepository: mockAuthRepo,
       entryRepository: mockEntryRepo,
       userState: mockUserState,
+      templateService: mockTemplateService,
     );
   });
 

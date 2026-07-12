@@ -10,6 +10,8 @@ import 'package:lystra/data/repositories/auth_repository.dart' as _i7;
 import 'package:lystra/data/repositories/list_entry_repository.dart' as _i8;
 import 'package:lystra/data/repositories/shopping_list_repository.dart' as _i5;
 import 'package:lystra/data/repositories/user_repository.dart' as _i11;
+import 'package:lystra/data/services/list_template_service.dart' as _i12;
+import 'package:lystra/data/services/list_templates_data.dart' as _i13;
 import 'package:lystra/data/services/user_state.dart' as _i9;
 import 'package:lystra/domain/models/app_user.dart' as _i3;
 import 'package:lystra/domain/models/list_entry.dart' as _i4;
@@ -659,4 +661,32 @@ class MockUserRepository extends _i1.Mock implements _i11.UserRepository {
         returnValue: _i6.Future<void>.value(),
         returnValueForMissingStub: _i6.Future<void>.value(),
       ) as _i6.Future<void>);
+}
+
+/// A class which mocks [ListTemplateService].
+///
+/// See the documentation for Mockito's code generation for more information.
+class MockListTemplateService extends _i1.Mock
+    implements _i12.ListTemplateService {
+  MockListTemplateService() {
+    _i1.throwOnMissingStub(this);
+  }
+
+  @override
+  _i6.Future<int> applyTemplate(
+    String? uid,
+    String? listId,
+    _i13.ListTemplate? template,
+  ) =>
+      (super.noSuchMethod(
+        Invocation.method(
+          #applyTemplate,
+          [
+            uid,
+            listId,
+            template,
+          ],
+        ),
+        returnValue: _i6.Future<int>.value(0),
+      ) as _i6.Future<int>);
 }
