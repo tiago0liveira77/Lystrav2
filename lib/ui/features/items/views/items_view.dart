@@ -116,7 +116,7 @@ class _ItemsViewState extends State<ItemsView> {
           TextButton.icon(
             onPressed: () {
               Navigator.pop(context);
-              vm.deleteItem(item.id);
+              _confirmDeleteItem(item);
             },
             icon: const Icon(Icons.delete_outline),
             label: const Text('Apagar'),
@@ -127,6 +127,32 @@ class _ItemsViewState extends State<ItemsView> {
         ],
       ),
     );
+  }
+
+  Future<void> _confirmDeleteItem(Item item) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogCtx) => AlertDialog(
+        title: const Text('Apagar item'),
+        content: Text('Tens a certeza que queres apagar "${item.name}"?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, false),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogCtx, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('Apagar'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true && mounted) {
+      widget.viewModel.deleteItem(item.id);
+    }
   }
 
   void _showQuickAddSheet(Item item) {
