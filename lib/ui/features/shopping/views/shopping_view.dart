@@ -83,6 +83,8 @@ class _ShoppingViewState extends State<ShoppingView> {
         categories: _vm.categories,
         entryFor: _vm.entryForItem,
         onAddOrIncrement: _vm.addOrIncrement,
+        onCreateItem: _vm.createItemAndAdd,
+        onCreateCategory: _vm.createCategory,
       ),
     );
   }

@@ -4,6 +4,7 @@ import 'package:lystra/domain/models/category.dart';
 import 'package:lystra/domain/models/item.dart';
 import 'package:lystra/domain/models/list_entry.dart';
 import 'package:lystra/ui/core/widgets/empty_state_widget.dart';
+import 'package:lystra/ui/features/items/views/widgets/item_form_bottom_sheet.dart';
 
 class AddToListBottomSheet extends StatefulWidget {
   const AddToListBottomSheet({
@@ -12,13 +13,19 @@ class AddToListBottomSheet extends StatefulWidget {
     required this.categories,
     required this.entryFor,
     required this.onAddOrIncrement,
+    this.onCreateItem,
+    this.onCreateCategory,
   });
 
   final List<Item> allItems;
   final List<Category> categories;
-  // Returns the current ListEntry for an item (null if not in list)
   final ListEntry? Function(String itemId) entryFor;
   final Future<void> Function(String itemId) onAddOrIncrement;
+  // Optional item-creation callbacks; when provided, shows "create" affordances.
+  final Future<Item?> Function(String name, String categoryId, String unit,
+      String? emoji)? onCreateItem;
+  final Future<Category?> Function(String name, String colorHex)?
+      onCreateCategory;
 
   @override
   State<AddToListBottomSheet> createState() => _AddToListBottomSheetState();
@@ -29,9 +36,10 @@ class _AddToListBottomSheetState extends State<AddToListBottomSheet> {
   String _query = '';
   final Set<String> _pending = {};
 
-  // Local quantity tracking so UI updates immediately without waiting for VM
   final Map<String, double> _localQty = {};
   final Set<String> _inList = {};
+  // Items created inline during this session (not yet in widget.allItems)
+  final List<Item> _extraItems = [];
 
   @override
   void initState() {
@@ -51,12 +59,44 @@ class _AddToListBottomSheetState extends State<AddToListBottomSheet> {
     super.dispose();
   }
 
+  List<Item> get _allItems => [...widget.allItems, ..._extraItems];
+
   List<Item> get _filtered {
-    if (_query.isEmpty) return widget.allItems;
+    if (_query.isEmpty) return _allItems;
     final q = _query.toLowerCase();
-    return widget.allItems
-        .where((i) => i.name.toLowerCase().contains(q))
-        .toList();
+    return _allItems.where((i) => i.name.toLowerCase().contains(q)).toList();
+  }
+
+  void _showCreateForm(BuildContext ctx) {
+    FocusScope.of(ctx).unfocus();
+    showModalBottomSheet(
+      context: ctx,
+      isScrollControlled: true,
+      useSafeArea: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius:
+            BorderRadius.vertical(top: Radius.circular(AppSpacing.xl)),
+      ),
+      builder: (_) => ItemFormBottomSheet(
+        categories: widget.categories,
+        onCreateCategory: widget.onCreateCategory,
+        initialName: _query.isNotEmpty ? _query : null,
+        onSubmit: (name, categoryId, unit, emoji) async {
+          final item =
+              await widget.onCreateItem!(name, categoryId, unit, emoji);
+          if (item != null && mounted) {
+            setState(() {
+              _extraItems.add(item);
+              _inList.add(item.id);
+              _localQty[item.id] = 1;
+            });
+          }
+          if (mounted) {
+            Navigator.pop(ctx); // ignore: use_build_context_synchronously
+          }
+        },
+      ),
+    );
   }
 
   Category? _categoryFor(String catId) =>
@@ -131,6 +171,12 @@ class _AddToListBottomSheetState extends State<AddToListBottomSheet> {
                   child: Text('Adicionar à lista',
                       style: theme.textTheme.titleLarge),
                 ),
+                if (widget.onCreateItem != null)
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline_rounded),
+                    tooltip: 'Criar novo item',
+                    onPressed: () => _showCreateForm(context),
+                  ),
                 IconButton(
                   icon: const Icon(Icons.close),
                   onPressed: () => Navigator.pop(context),
@@ -153,7 +199,15 @@ class _AddToListBottomSheetState extends State<AddToListBottomSheet> {
                 ? EmptyStateWidget(
                     icon: Icons.inventory_2_outlined,
                     headline: 'Sem resultados',
-                    subtext: 'Tenta outra pesquisa.',
+                    subtext: _query.isNotEmpty && widget.onCreateItem != null
+                        ? 'Nenhum item com esse nome.'
+                        : 'Tenta outra pesquisa.',
+                    ctaLabel: _query.isNotEmpty && widget.onCreateItem != null
+                        ? 'Criar "$_query"'
+                        : null,
+                    onCta: _query.isNotEmpty && widget.onCreateItem != null
+                        ? () => _showCreateForm(context)
+                        : null,
                   )
                 : ListView.builder(
                     controller: scrollController,

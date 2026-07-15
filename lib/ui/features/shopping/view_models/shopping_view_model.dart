@@ -192,6 +192,36 @@ class ShoppingViewModel extends ChangeNotifier {
         householdId: householdId);
   }
 
+  Future<Category?> createCategory(String name, String colorHex) async {
+    final uid = _uid;
+    if (uid == null) return null;
+    try {
+      final category =
+          await _categoryRepository.createCategory(uid, name, colorHex);
+      _categories = [..._categories, category];
+      notifyListeners();
+      return category;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Future<Item?> createItemAndAdd(
+      String name, String categoryId, String unit, String? emoji) async {
+    final uid = _uid;
+    if (uid == null) return null;
+    try {
+      final item = await _itemRepository.createItem(uid, name, categoryId,
+          unit: unit, emoji: emoji);
+      _items = [..._items, item];
+      await addOrIncrement(item.id);
+      notifyListeners();
+      return item;
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<bool> finishShopping() async {
     final uid = _uid;
     final list = _list;
