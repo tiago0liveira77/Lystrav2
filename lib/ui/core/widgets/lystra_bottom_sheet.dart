@@ -34,7 +34,7 @@ class LystraBottomSheetContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
+    return SingleChildScrollView(
       padding: EdgeInsets.only(
         bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
@@ -72,4 +72,5 @@ class LystraBottomSheetContent extends StatelessWidget {
       ),
     );
   }
+
 }
