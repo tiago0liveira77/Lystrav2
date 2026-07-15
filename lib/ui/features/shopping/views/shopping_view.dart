@@ -99,7 +99,7 @@ class _ShoppingViewState extends State<ShoppingView> {
                 pinned: true,
                 leading: IconButton(
                   icon: const Icon(Icons.arrow_back),
-                  onPressed: () => context.go('/lists'),
+                  onPressed: () => context.pop(),
                 ),
                 title: Text(_vm.list?.name ?? ''),
                 actions: [

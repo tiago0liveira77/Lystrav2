@@ -26,6 +26,14 @@ class _ListsViewState extends State<ListsView> {
     widget.viewModel.loadLists();
   }
 
+  @override
+  void didUpdateWidget(ListsView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.viewModel != widget.viewModel) {
+      widget.viewModel.loadLists();
+    }
+  }
+
   void _showCreateSheet({bool household = false}) {
     showModalBottomSheet(
       context: context,
@@ -155,7 +163,7 @@ class _ListsViewState extends State<ListsView> {
       ),
     );
     // ignore: use_build_context_synchronously
-    context.go(_shopRoute(list));
+    context.push(_shopRoute(list));
   }
 
   String _shopRoute(ShoppingList list) {
@@ -247,7 +255,7 @@ class _ListsViewState extends State<ListsView> {
                     shoppingList: list,
                     totalCount: vm.totalCountFor(list.id),
                     checkedCount: vm.checkedCountFor(list.id),
-                    onTap: () => context.go(_shopRoute(list)),
+                    onTap: () => context.push(_shopRoute(list)),
                     onDelete: () => _confirmDelete(list),
                     onRename: () => _showRenameSheet(list),
                   ),
@@ -264,7 +272,7 @@ class _ListsViewState extends State<ListsView> {
                     shoppingList: list,
                     totalCount: vm.totalCountFor(list.id),
                     checkedCount: vm.checkedCountFor(list.id),
-                    onTap: () => context.go(_shopRoute(list)),
+                    onTap: () => context.push(_shopRoute(list)),
                     onDelete: () => _confirmDelete(list),
                     onRename: () => _showRenameSheet(list),
                   ),
