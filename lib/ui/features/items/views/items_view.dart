@@ -61,6 +61,7 @@ class _ItemsViewState extends State<ItemsView> {
   }
 
   void _showCreateSheet() {
+    FocusScope.of(context).unfocus();
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -86,6 +87,7 @@ class _ItemsViewState extends State<ItemsView> {
   }
 
   void _showEditSheet(Item item) {
+    FocusScope.of(context).unfocus();
     final vm = widget.viewModel;
     showModalBottomSheet(
       context: context,
