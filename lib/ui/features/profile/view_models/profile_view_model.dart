@@ -5,6 +5,9 @@ import 'package:lystra/data/repositories/auth_repository.dart';
 import 'package:lystra/data/repositories/category_repository.dart';
 import 'package:lystra/data/repositories/household_repository.dart';
 import 'package:lystra/data/repositories/item_repository.dart';
+import 'package:lystra/data/repositories/list_entry_repository.dart';
+import 'package:lystra/data/repositories/purchase_record_repository.dart';
+import 'package:lystra/data/repositories/shopping_list_repository.dart';
 import 'package:lystra/data/repositories/user_repository.dart';
 import 'package:lystra/data/services/seed_data_service.dart';
 import 'package:lystra/data/services/user_state.dart';
@@ -24,13 +27,19 @@ class ProfileViewModel extends ChangeNotifier {
     required SeedDataService seedDataService,
     required CategoryRepository categoryRepository,
     required ItemRepository itemRepository,
+    required ShoppingListRepository listRepository,
+    required ListEntryRepository entryRepository,
+    required PurchaseRecordRepository recordRepository,
   })  : _authRepository = authRepository,
         _userRepository = userRepository,
         _userState = userState,
         _householdRepository = householdRepository,
         _seedDataService = seedDataService,
         _categoryRepository = categoryRepository,
-        _itemRepository = itemRepository {
+        _itemRepository = itemRepository,
+        _listRepository = listRepository,
+        _entryRepository = entryRepository,
+        _recordRepository = recordRepository {
     // Rebuild whenever UserState loads/changes (async from Firestore)
     _userState.addListener(_onUserStateChanged);
   }
@@ -42,6 +51,9 @@ class ProfileViewModel extends ChangeNotifier {
   final SeedDataService _seedDataService;
   final CategoryRepository _categoryRepository;
   final ItemRepository _itemRepository;
+  final ShoppingListRepository _listRepository;
+  final ListEntryRepository _entryRepository;
+  final PurchaseRecordRepository _recordRepository;
 
   AppUser? get currentUser => _userState.user ?? _authRepository.currentUser;
   bool get isPremium => _userState.isPremium;
@@ -98,6 +110,13 @@ class ProfileViewModel extends ChangeNotifier {
 
   Future<void> signOut() async {
     _householdSub?.cancel();
+    // Clear all in-memory caches before signing out so a subsequent user on
+    // the same device never sees a previous user's data.
+    _itemRepository.invalidateCache();
+    _categoryRepository.invalidateCache();
+    _listRepository.invalidateCache();
+    _entryRepository.invalidateAll();
+    _recordRepository.invalidateCache();
     await _authRepository.signOut();
   }
 

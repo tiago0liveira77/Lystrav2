@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:lystra/core/theme/app_spacing.dart';
 
 class PremiumBanner extends StatelessWidget {
-  const PremiumBanner({super.key, required this.onUpgrade});
+  const PremiumBanner({super.key, this.onUpgrade});
 
-  final VoidCallback onUpgrade;
+  final VoidCallback? onUpgrade;
 
   @override
   Widget build(BuildContext context) {

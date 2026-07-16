@@ -33,8 +33,11 @@ class _CategoryFormBottomSheetState extends State<CategoryFormBottomSheet> {
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
-    await widget.onSubmit(_nameController.text.trim(), _selectedColor);
-    if (mounted) setState(() => _isLoading = false);
+    try {
+      await widget.onSubmit(_nameController.text.trim(), _selectedColor);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   @override

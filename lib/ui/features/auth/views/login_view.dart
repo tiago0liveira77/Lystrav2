@@ -73,8 +73,16 @@ class _LoginViewState extends State<LoginView> {
                           labelText: 'Email',
                           prefixIcon: Icon(Icons.email_outlined),
                         ),
-                        validator: (v) =>
-                            v == null || !v.contains('@') ? 'Email inválido' : null,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'Email obrigatório';
+                          }
+                          final emailRe =
+                              RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                          return emailRe.hasMatch(v.trim())
+                              ? null
+                              : 'Email inválido';
+                        },
                       ),
                       const SizedBox(height: AppSpacing.sm),
                       TextFormField(
@@ -93,9 +101,8 @@ class _LoginViewState extends State<LoginView> {
                                 () => _obscurePassword = !_obscurePassword),
                           ),
                         ),
-                        validator: (v) => v == null || v.length < 6
-                            ? 'Mínimo 6 caracteres'
-                            : null,
+                        validator: (v) =>
+                            v == null || v.isEmpty ? 'Password obrigatória' : null,
                       ),
                       const SizedBox(height: AppSpacing.md),
                       if (widget.viewModel.errorMessage != null)

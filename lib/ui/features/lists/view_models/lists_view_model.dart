@@ -96,8 +96,8 @@ class ListsViewModel extends ChangeNotifier {
         _householdLists = [];
       }
 
-      _setState(ViewState.loaded);
       await _loadEntryCounts(uid);
+      _setState(ViewState.loaded);
     } catch (e) {
       _errorMessage = 'Erro ao carregar listas.';
       _setState(ViewState.error);

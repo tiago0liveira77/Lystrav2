@@ -24,6 +24,7 @@ class QuickAddToListSheet extends StatefulWidget {
 
 class _QuickAddToListSheetState extends State<QuickAddToListSheet> {
   List<ShoppingList>? _lists;
+  bool _loadError = false;
   final Map<String, bool> _inListStatus = {};
   final Set<String> _adding = {};
   final Set<String> _justAdded = {};
@@ -35,27 +36,34 @@ class _QuickAddToListSheetState extends State<QuickAddToListSheet> {
   }
 
   Future<void> _load() async {
-    final lists = await widget.getLists();
-    if (!mounted) return;
-    setState(() => _lists = lists);
-
-    // Check status for each list in parallel
-    await Future.wait(lists.map((list) async {
-      final inList = await widget.isInList(list.id);
-      if (mounted) setState(() => _inListStatus[list.id] = inList);
-    }));
+    try {
+      final lists = await widget.getLists();
+      if (!mounted) return;
+      setState(() => _lists = lists);
+      await Future.wait(lists.map((list) async {
+        final inList = await widget.isInList(list.id);
+        if (mounted) setState(() => _inListStatus[list.id] = inList);
+      }));
+    } catch (_) {
+      if (mounted) setState(() => _loadError = true);
+    }
   }
 
   Future<void> _add(ShoppingList list) async {
     if (_adding.contains(list.id) || _inListStatus[list.id] == true) return;
     setState(() => _adding.add(list.id));
-    await widget.onAdd(list.id);
-    if (mounted) {
-      setState(() {
-        _adding.remove(list.id);
-        _inListStatus[list.id] = true;
-        _justAdded.add(list.id);
-      });
+    try {
+      await widget.onAdd(list.id);
+      if (mounted) {
+        setState(() {
+          _inListStatus[list.id] = true;
+          _justAdded.add(list.id);
+        });
+      }
+    } catch (_) {
+      // ignore add failure — button returns to normal state
+    } finally {
+      if (mounted) setState(() => _adding.remove(list.id));
     }
   }
 
@@ -116,7 +124,31 @@ class _QuickAddToListSheetState extends State<QuickAddToListSheet> {
             ),
           ),
           const Divider(height: 1),
-          if (lists == null)
+          if (_loadError)
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.error_outline,
+                      color: Theme.of(context).colorScheme.error),
+                  const SizedBox(height: AppSpacing.sm),
+                  const Text('Erro ao carregar listas.',
+                      textAlign: TextAlign.center),
+                  TextButton(
+                    onPressed: () {
+                      setState(() {
+                        _loadError = false;
+                        _lists = null;
+                      });
+                      _load();
+                    },
+                    child: const Text('Tentar novamente'),
+                  ),
+                ],
+              ),
+            )
+          else if (lists == null)
             const Padding(
               padding: EdgeInsets.all(AppSpacing.xl),
               child: Center(child: CircularProgressIndicator()),

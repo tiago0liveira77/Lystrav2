@@ -1,3 +1,4 @@
+import 'package:collection/collection.dart';
 import 'package:lystra/data/models/list_entry_model.dart';
 import 'package:lystra/data/services/firestore_service.dart';
 import 'package:lystra/domain/models/list_entry.dart';
@@ -61,7 +62,7 @@ class ListEntryRepository {
   Future<void> toggleEntry(String uid, String listId, String entryId,
       {String? householdId}) async {
     final entries = _cache[listId];
-    final entry = entries?.firstWhere((e) => e.id == entryId);
+    final entry = entries?.firstWhereOrNull((e) => e.id == entryId);
     if (entry == null) return;
 
     final updated = entry.copyWith(
@@ -98,7 +99,10 @@ class ListEntryRepository {
 
   Future<void> resetEntries(String uid, String listId,
       {String? householdId}) async {
-    final entries = _cache[listId] ?? [];
+    // Fetch from Firestore when cache is empty to guarantee a real reset
+    final entries = _cache.containsKey(listId)
+        ? _cache[listId]!
+        : await getEntries(uid, listId, householdId: householdId);
     final checked = entries.where((e) => e.isChecked).toList();
     if (checked.isEmpty) return;
     await Future.wait(checked.map((e) => _firestore.updateDoc(

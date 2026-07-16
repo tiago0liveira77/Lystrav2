@@ -26,6 +26,9 @@ dependencies:
   freezed_annotation: ^2.4.0
   json_annotation: ^4.9.0
 
+  # Utilities
+  collection: ^1.18.0
+
   # UI
   google_fonts: ^6.2.0
   shimmer: ^3.0.0

@@ -272,6 +272,36 @@ class _ItemsViewState extends State<ItemsView> {
       );
     }
 
+    if (vm.state == ViewState.error) {
+      return SliverFillRemaining(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.error_outline,
+                    size: 48,
+                    color: Theme.of(context).colorScheme.error),
+                const SizedBox(height: AppSpacing.md),
+                Text(
+                  'Erro ao carregar os itens.\nVerifica a tua ligação.',
+                  textAlign: TextAlign.center,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                ),
+                const SizedBox(height: AppSpacing.lg),
+                FilledButton.icon(
+                  onPressed: vm.load,
+                  icon: const Icon(Icons.refresh),
+                  label: const Text('Tentar novamente'),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+
     final items = vm.filteredItems;
 
     if (items.isEmpty) {

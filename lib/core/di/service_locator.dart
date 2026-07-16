@@ -109,6 +109,9 @@ void setupServiceLocator() {
       seedDataService: sl(),
       categoryRepository: sl(),
       itemRepository: sl(),
+      listRepository: sl(),
+      entryRepository: sl(),
+      recordRepository: sl(),
     ),
   );
 }

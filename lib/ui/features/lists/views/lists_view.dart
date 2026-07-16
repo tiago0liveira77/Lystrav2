@@ -352,6 +352,12 @@ class _ListNameDialogState extends State<_ListNameDialog> {
     super.dispose();
   }
 
+  void _confirm() {
+    final name = _controller.text.trim();
+    if (name.isEmpty) return;
+    Navigator.pop(context, name);
+  }
+
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -361,16 +367,19 @@ class _ListNameDialogState extends State<_ListNameDialog> {
         autofocus: true,
         textCapitalization: TextCapitalization.sentences,
         decoration: const InputDecoration(labelText: 'Nome da lista'),
-        onSubmitted: (_) => Navigator.pop(context, _controller.text.trim()),
+        onSubmitted: (_) => _confirm(),
       ),
       actions: [
         TextButton(
           onPressed: () => Navigator.pop(context, null),
           child: const Text('Cancelar'),
         ),
-        FilledButton(
-          onPressed: () => Navigator.pop(context, _controller.text.trim()),
-          child: const Text('Criar'),
+        ValueListenableBuilder<TextEditingValue>(
+          valueListenable: _controller,
+          builder: (_, value, __) => FilledButton(
+            onPressed: value.text.trim().isEmpty ? null : _confirm,
+            child: const Text('Criar'),
+          ),
         ),
       ],
     );

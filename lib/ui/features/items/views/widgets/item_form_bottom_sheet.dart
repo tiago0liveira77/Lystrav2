@@ -68,13 +68,16 @@ class _ItemFormBottomSheetState extends State<ItemFormBottomSheet> {
     final emoji = _emojiController.text.trim().isEmpty
         ? null
         : _emojiController.text.trim();
-    await widget.onSubmit(
-      _nameController.text.trim(),
-      _selectedCategoryId ?? 'uncategorized',
-      _selectedUnit,
-      emoji,
-    );
-    if (mounted) setState(() => _isLoading = false);
+    try {
+      await widget.onSubmit(
+        _nameController.text.trim(),
+        _selectedCategoryId ?? 'uncategorized',
+        _selectedUnit,
+        emoji,
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
   }
 
   void _showCreateCategory() {

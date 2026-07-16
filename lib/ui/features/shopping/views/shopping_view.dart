@@ -69,7 +69,14 @@ class _ShoppingViewState extends State<ShoppingView> {
     );
     if (confirmed == true) {
       final success = await _vm.finishShopping();
-      if (success && mounted) context.go('/lists');
+      if (!mounted) return;
+      if (success) {
+        context.go('/lists');
+      } else if (_vm.error != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(_vm.error!)),
+        );
+      }
     }
   }
 
@@ -105,7 +112,7 @@ class _ShoppingViewState extends State<ShoppingView> {
                 ),
                 title: Text(_vm.list?.name ?? ''),
                 actions: [
-                  if (!_vm.isLoading && _vm.entries.isNotEmpty)
+                  if (!_vm.isLoading && _vm.checkedEntries.isNotEmpty)
                     FilledButton.icon(
                       onPressed: _vm.isFinishing ? null : _confirmFinish,
                       icon: const Icon(Icons.check, size: 18),
@@ -144,6 +151,34 @@ class _ShoppingViewState extends State<ShoppingView> {
                   delegate: SliverChildBuilderDelegate(
                     (_, __) => const SkeletonListTile(),
                     childCount: 6,
+                  ),
+                )
+              else if (_vm.error != null)
+                SliverFillRemaining(
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(AppSpacing.lg),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(Icons.error_outline,
+                              size: 48,
+                              color: Theme.of(context).colorScheme.error),
+                          const SizedBox(height: AppSpacing.md),
+                          Text(
+                            _vm.error!,
+                            textAlign: TextAlign.center,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
+                          const SizedBox(height: AppSpacing.lg),
+                          FilledButton.icon(
+                            onPressed: _vm.load,
+                            icon: const Icon(Icons.refresh),
+                            label: const Text('Tentar novamente'),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 )
               else
@@ -237,7 +272,7 @@ class _ShoppingViewState extends State<ShoppingView> {
     return SliverToBoxAdapter(
       child: ExpansionTile(
         title: Text(
-          'Marcados (${_vm.checkedEntries.length})',
+          'Marcados (${checked.length})',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),

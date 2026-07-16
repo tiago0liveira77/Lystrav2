@@ -79,8 +79,15 @@ class _RegisterViewState extends State<RegisterView> {
                         labelText: 'Email',
                         prefixIcon: Icon(Icons.email_outlined),
                       ),
-                      validator: (v) =>
-                          v == null || !v.contains('@') ? 'Email inválido' : null,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Email obrigatório';
+                        }
+                        final emailRe = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+                        return emailRe.hasMatch(v.trim())
+                            ? null
+                            : 'Email inválido';
+                      },
                     ),
                     const SizedBox(height: AppSpacing.sm),
                     TextFormField(

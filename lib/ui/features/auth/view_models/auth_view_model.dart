@@ -41,12 +41,19 @@ class AuthViewModel extends ChangeNotifier {
     try {
       final user =
           await _authRepository.registerWithEmail(email, password, displayName);
-      // Create Firestore user document
-      await _userRepository.createOrUpdate(user);
-      // Seed base categories + items for new user
-      await _seedDataService.seedIfFirstTime(user.uid);
+      // Firestore setup — non-fatal: auth succeeded, user can still sign in.
+      // On next sign-in, UserState will retry loading the user document.
+      try {
+        await _userRepository.createOrUpdate(user);
+        await _seedDataService.seedIfFirstTime(user.uid);
+      } catch (_) {
+        // Setup failed but Firebase Auth account exists — don't block the user.
+      }
     } on FirebaseAuthException catch (e) {
       _errorMessage = _mapError(e.code);
+      notifyListeners();
+    } catch (_) {
+      _errorMessage = 'Ocorreu um erro. Tenta novamente.';
       notifyListeners();
     } finally {
       _setLoading(false);

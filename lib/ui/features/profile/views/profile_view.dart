@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lystra/core/theme/app_spacing.dart';
 import 'package:lystra/ui/features/profile/view_models/profile_view_model.dart';
@@ -234,7 +235,9 @@ class _ProfileViewState extends State<ProfileView> {
                       // Premium banner or premium active chip
                       if (!vm.isPremium)
                         PremiumBanner(
-                          onUpgrade: () => vm.togglePremium(true),
+                          onUpgrade: kDebugMode
+                              ? () => vm.togglePremium(true)
+                              : null,
                         )
                       else
                         Container(
@@ -255,12 +258,12 @@ class _ProfileViewState extends State<ProfileView> {
                                     style: theme.textTheme.titleSmall?.copyWith(
                                         color: scheme.onSecondaryContainer)),
                               ),
-                              // For testing: toggle off
-                              Switch(
-                                value: true,
-                                onChanged: (_) => vm.togglePremium(false),
-                                activeThumbColor: scheme.secondary,
-                              ),
+                              if (kDebugMode)
+                                Switch(
+                                  value: true,
+                                  onChanged: (_) => vm.togglePremium(false),
+                                  activeThumbColor: scheme.secondary,
+                                ),
                             ],
                           ),
                         ),
@@ -348,7 +351,35 @@ class _ProfileViewState extends State<ProfileView> {
                               color: scheme.error),
                           title: Text('Terminar sessão',
                               style: TextStyle(color: scheme.error)),
-                          onTap: () => vm.signOut(),
+                          onTap: () async {
+                            final confirmed = await showDialog<bool>(
+                              context: context,
+                              builder: (ctx) => AlertDialog(
+                                title: const Text('Terminar sessão'),
+                                content: const Text(
+                                    'Tens a certeza que queres sair da conta?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(ctx, false),
+                                    child: const Text('Cancelar'),
+                                  ),
+                                  FilledButton(
+                                    style: FilledButton.styleFrom(
+                                      backgroundColor:
+                                          scheme.error,
+                                      foregroundColor:
+                                          scheme.onError,
+                                    ),
+                                    onPressed: () =>
+                                        Navigator.pop(ctx, true),
+                                    child: const Text('Sair'),
+                                  ),
+                                ],
+                              ),
+                            );
+                            if (confirmed == true) vm.signOut();
+                          },
                         ),
                       ),
 

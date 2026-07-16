@@ -56,6 +56,9 @@ class ShoppingViewModel extends ChangeNotifier {
   bool _isFinishing = false;
   bool get isFinishing => _isFinishing;
 
+  String? _error;
+  String? get error => _error;
+
   String? get _uid => _authRepository.currentUser?.uid;
 
   List<ListEntry> get entries => List.unmodifiable(_entries);
@@ -95,8 +98,14 @@ class ShoppingViewModel extends ChangeNotifier {
 
   Future<void> load() async {
     final uid = _uid;
-    if (uid == null) return;
+    if (uid == null) {
+      _isLoading = false;
+      _error = 'Sessão expirada. Por favor, entra novamente.';
+      notifyListeners();
+      return;
+    }
     _isLoading = true;
+    _error = null;
     notifyListeners();
     try {
       // Load list metadata from correct path
@@ -112,6 +121,9 @@ class ShoppingViewModel extends ChangeNotifier {
       ]);
       final lists = results[0] as List<ShoppingList>;
       _list = lists.where((l) => l.id == _listId).firstOrNull;
+      if (_list == null) {
+        _error = 'Lista não encontrada. Pode ter sido apagada.';
+      }
       _entries = results[1] as List<ListEntry>;
       _items = results[2] as List<Item>;
       _categories = results[3] as List<Category>;
@@ -124,6 +136,8 @@ class ShoppingViewModel extends ChangeNotifier {
         _entries = entries;
         notifyListeners();
       });
+    } catch (_) {
+      _error = 'Erro ao carregar a lista. Verifica a tua ligação.';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -225,8 +239,9 @@ class ShoppingViewModel extends ChangeNotifier {
   Future<bool> finishShopping() async {
     final uid = _uid;
     final list = _list;
-    if (uid == null || list == null) return false;
+    if (uid == null || list == null || checkedEntries.isEmpty) return false;
     _isFinishing = true;
+    _error = null;
     notifyListeners();
     try {
       final recordEntries = checkedEntries.map((entry) {
@@ -256,6 +271,7 @@ class ShoppingViewModel extends ChangeNotifier {
           .toList();
       return true;
     } catch (_) {
+      _error = 'Erro ao guardar as compras. Tenta novamente.';
       return false;
     } finally {
       _isFinishing = false;
