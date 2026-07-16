@@ -213,14 +213,18 @@ class _ShoppingItemRowState extends State<ShoppingItemRow>
     return AnimatedBuilder(
       animation: _controller,
       builder: (context, _) {
-        // Checked: sem Dismissible nem InkWell — evita o background bleeding
-        // em dispositivos Samsung/Xiaomi dentro de ExpansionTile
+        // Checked: sem Dismissible nem InkWell, e com ColoredBox explícito
+        // para sobrepor o fundo cinzento que o ExpansionTile do MIUI/Samsung
+        // aplica aos seus filhos.
         if (isChecked) {
           return GestureDetector(
             onTap: _handleTap,
-            child: SizedBox(
-              height: 64,
-              child: _buildContent(scheme, textTheme, dotColor, isChecked),
+            child: ColoredBox(
+              color: scheme.surface,
+              child: SizedBox(
+                height: 64,
+                child: _buildContent(scheme, textTheme, dotColor, isChecked),
+              ),
             ),
           );
         }
