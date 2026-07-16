@@ -73,12 +73,12 @@ class _ProfileViewState extends State<ProfileView> {
         final user = vm.currentUser;
         final theme = Theme.of(context);
         final scheme = theme.colorScheme;
-        final displayStr = user?.displayName?.isNotEmpty == true
+        final email = user?.email ?? '';
+        final displayName = user?.displayName?.isNotEmpty == true
             ? user!.displayName!
-            : user?.email.isNotEmpty == true
-                ? user!.email
-                : '?';
-        final initials = displayStr[0].toUpperCase();
+            : null;
+        final initials =
+            (displayName ?? email).isNotEmpty ? (displayName ?? email)[0].toUpperCase() : '?';
 
         return Scaffold(
           body: CustomScrollView(
@@ -105,11 +105,13 @@ class _ProfileViewState extends State<ProfileView> {
                                     fontWeight: FontWeight.bold,
                                     fontSize: 18)),
                           ),
-                          title: Text(user?.displayName ?? 'Utilizador',
+                          title: Text(displayName ?? email,
                               style: theme.textTheme.titleMedium),
-                          subtitle: Text(user?.email ?? '',
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                  color: scheme.onSurfaceVariant)),
+                          subtitle: displayName != null && email.isNotEmpty
+                              ? Text(email,
+                                  style: theme.textTheme.bodySmall?.copyWith(
+                                      color: scheme.onSurfaceVariant))
+                              : null,
                         ),
                       ),
 

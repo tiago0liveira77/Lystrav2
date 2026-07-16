@@ -32,7 +32,7 @@ void setupServiceLocator() {
     () => FcmService(userRepository: sl()),
   );
   sl.registerLazySingleton<UserState>(
-    () => UserState(userRepository: sl()),
+    () => UserState(userRepository: sl(), authRepository: sl()),
   );
   sl.registerLazySingleton<ListTemplateService>(
     () => ListTemplateService(

@@ -92,7 +92,6 @@ class ProfileViewModel extends ChangeNotifier {
   }
 
   Future<void> loadUserData() async {
-    // UserState is already loaded at app startup — subscribe to household if present
     if (_userState.householdId != null && _householdSub == null) {
       _subscribeToHousehold(_userState.householdId!);
     }
