@@ -1,9 +1,6 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:lystra/core/theme/app_spacing.dart';
 import 'package:lystra/ui/features/profile/view_models/profile_view_model.dart';
-import 'package:lystra/ui/features/profile/views/widgets/household_section.dart';
-import 'package:lystra/ui/features/profile/views/widgets/premium_banner.dart';
 
 class ProfileView extends StatefulWidget {
   const ProfileView({super.key, required this.viewModel});
@@ -15,9 +12,6 @@ class ProfileView extends StatefulWidget {
 }
 
 class _ProfileViewState extends State<ProfileView> {
-  final _householdNameController = TextEditingController();
-  final _inviteCodeController = TextEditingController();
-
   @override
   void initState() {
     super.initState();
@@ -28,8 +22,6 @@ class _ProfileViewState extends State<ProfileView> {
   @override
   void dispose() {
     widget.viewModel.removeListener(_onStateChange);
-    _householdNameController.dispose();
-    _inviteCodeController.dispose();
     super.dispose();
   }
 
@@ -50,16 +42,6 @@ class _ProfileViewState extends State<ProfileView> {
       vm.clearSeedMessage();
     }
 
-    // Household error
-    if (vm.householdState == HouseholdState.error &&
-        vm.householdError != null) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-        content: Text(vm.householdError!),
-        backgroundColor: Theme.of(context).colorScheme.error,
-        behavior: SnackBarBehavior.floating,
-      ));
-      vm.clearHouseholdError();
-    }
   }
 
   Future<void> _confirmLoadBaseItems() async {
@@ -80,105 +62,6 @@ class _ProfileViewState extends State<ProfileView> {
       ),
     );
     if (confirmed == true) widget.viewModel.loadBaseItems();
-  }
-
-  void _showCreateHouseholdSheet() {
-    _householdNameController.clear();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.xl))),
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: AppSpacing.md,
-          right: AppSpacing.md,
-          top: AppSpacing.lg,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Criar household',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.md),
-            TextField(
-              controller: _householdNameController,
-              autofocus: true,
-              decoration:
-                  const InputDecoration(labelText: 'Nome do household'),
-              textCapitalization: TextCapitalization.sentences,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            FilledButton(
-              onPressed: () {
-                final name = _householdNameController.text.trim();
-                if (name.isNotEmpty) {
-                  widget.viewModel.createHousehold(name);
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Criar'),
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showJoinHouseholdSheet() {
-    _inviteCodeController.clear();
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      shape: const RoundedRectangleBorder(
-          borderRadius: BorderRadius.vertical(top: Radius.circular(AppSpacing.xl))),
-      builder: (_) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-          left: AppSpacing.md,
-          right: AppSpacing.md,
-          top: AppSpacing.lg,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text('Entrar num household',
-                style: Theme.of(context).textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.sm),
-            Text('Pede o código de 6 dígitos ao dono do household.',
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant)),
-            const SizedBox(height: AppSpacing.md),
-            TextField(
-              controller: _inviteCodeController,
-              autofocus: true,
-              maxLength: 6,
-              textCapitalization: TextCapitalization.characters,
-              decoration: const InputDecoration(
-                  labelText: 'Código de convite',
-                  hintText: 'Ex: AB1C2D'),
-            ),
-            FilledButton(
-              onPressed: () {
-                final code = _inviteCodeController.text.trim();
-                if (code.isNotEmpty) {
-                  widget.viewModel.joinHousehold(code);
-                  Navigator.pop(context);
-                }
-              },
-              child: const Text('Entrar'),
-            ),
-            const SizedBox(height: AppSpacing.md),
-          ],
-        ),
-      ),
-    );
   }
 
   @override
@@ -231,90 +114,6 @@ class _ProfileViewState extends State<ProfileView> {
                       ),
 
                       const SizedBox(height: AppSpacing.lg),
-
-                      // Premium banner or premium active chip
-                      if (!vm.isPremium)
-                        PremiumBanner(
-                          onUpgrade: kDebugMode
-                              ? () => vm.togglePremium(true)
-                              : null,
-                        )
-                      else
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: AppSpacing.md,
-                              vertical: AppSpacing.sm),
-                          decoration: BoxDecoration(
-                            color: scheme.secondaryContainer,
-                            borderRadius: BorderRadius.circular(AppRadius.lg),
-                          ),
-                          child: Row(
-                            children: [
-                              Icon(Icons.workspace_premium,
-                                  color: scheme.secondary, size: 20),
-                              const SizedBox(width: AppSpacing.sm),
-                              Expanded(
-                                child: Text('Premium activo',
-                                    style: theme.textTheme.titleSmall?.copyWith(
-                                        color: scheme.onSecondaryContainer)),
-                              ),
-                              if (kDebugMode)
-                                Switch(
-                                  value: true,
-                                  onChanged: (_) => vm.togglePremium(false),
-                                  activeThumbColor: scheme.secondary,
-                                ),
-                            ],
-                          ),
-                        ),
-
-                      const SizedBox(height: AppSpacing.lg),
-
-                      // Household section (premium only)
-                      if (vm.isPremium) ...[
-                        _SectionLabel('Household'),
-                        const SizedBox(height: AppSpacing.xs),
-                        if (vm.householdState == HouseholdState.loading)
-                          const Center(
-                              child: Padding(
-                                  padding:
-                                      EdgeInsets.all(AppSpacing.lg),
-                                  child: CircularProgressIndicator()))
-                        else if (vm.household != null)
-                          HouseholdSection(
-                            household: vm.household!,
-                            viewModel: vm,
-                            currentUid: user?.uid ?? '',
-                          )
-                        else ...[
-                          Card(
-                            child: Column(
-                              children: [
-                                ListTile(
-                                  leading: Icon(Icons.add_home_outlined,
-                                      color: scheme.primary),
-                                  title: const Text('Criar household'),
-                                  subtitle: const Text(
-                                      'Cria um grupo e convida a família'),
-                                  trailing: const Icon(Icons.chevron_right),
-                                  onTap: _showCreateHouseholdSheet,
-                                ),
-                                const Divider(height: 1, indent: 16),
-                                ListTile(
-                                  leading: Icon(Icons.group_add_outlined,
-                                      color: scheme.primary),
-                                  title: const Text('Entrar num household'),
-                                  subtitle: const Text(
-                                      'Usa um código de convite'),
-                                  trailing: const Icon(Icons.chevron_right),
-                                  onTap: _showJoinHouseholdSheet,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                        const SizedBox(height: AppSpacing.lg),
-                      ],
 
                       // Catalogue
                       _SectionLabel('Catálogo'),

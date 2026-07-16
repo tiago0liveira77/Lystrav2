@@ -74,16 +74,6 @@ class _ListsViewState extends State<ListsView> {
                 _showCreateSheet();
               },
             ),
-            if (widget.viewModel.isInHousehold)
-              ListTile(
-                leading: const Icon(Icons.group_outlined),
-                title: const Text('Lista partilhada'),
-                subtitle: const Text('Visível a todos no household'),
-                onTap: () {
-                  Navigator.pop(context);
-                  _showCreateSheet(household: true);
-                },
-              ),
             ListTile(
               leading: const Icon(Icons.list_alt_rounded),
               title: const Text('A partir de modelo'),
@@ -262,22 +252,6 @@ class _ListsViewState extends State<ListsView> {
                 )),
           ],
 
-          // Household lists
-          if (vm.householdLists.isNotEmpty) ...[
-            _SectionHeader(Icons.group_outlined, 'Partilhadas'),
-            ...vm.householdLists.map((list) => Padding(
-                  padding:
-                      const EdgeInsets.only(bottom: AppSpacing.sm),
-                  child: ShoppingListCard(
-                    shoppingList: list,
-                    totalCount: vm.totalCountFor(list.id),
-                    checkedCount: vm.checkedCountFor(list.id),
-                    onTap: () => context.push(_shopRoute(list)),
-                    onDelete: () => _confirmDelete(list),
-                    onRename: () => _showRenameSheet(list),
-                  ),
-                )),
-          ],
         ]),
       ),
     );
