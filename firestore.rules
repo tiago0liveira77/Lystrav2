@@ -53,20 +53,22 @@ service cloud.firestore {
 
     // Households — accessible to all members (premium feature)
     match /households/{householdId} {
-      // Any member can read
-      allow read: if isAuthenticated() &&
-        request.auth.uid in resource.data.memberIds;
-
-      // Only owner can update (add/remove members)
+      allow read: if isHouseholdMember(householdId);
+      allow create: if isPremium(request.auth.uid);
       allow update: if isAuthenticated() &&
         request.auth.uid == resource.data.ownerId;
-
-      // Any authenticated premium user can create a household
-      allow create: if isPremium(request.auth.uid);
-
-      // Only owner can delete
       allow delete: if isAuthenticated() &&
         request.auth.uid == resource.data.ownerId;
+
+      // Household lists
+      match /lists/{listId} {
+        allow read, write: if isHouseholdMember(householdId);
+
+        // List entries
+        match /entries/{entryId} {
+          allow read, write: if isHouseholdMember(householdId);
+        }
+      }
     }
   }
 }

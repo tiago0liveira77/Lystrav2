@@ -90,8 +90,12 @@ class ListsViewModel extends ChangeNotifier {
       _personalLists = await _listRepository.getLists(uid);
 
       if (_householdId != null) {
-        _householdLists =
-            await _listRepository.getHouseholdLists(_householdId!);
+        try {
+          _householdLists =
+              await _listRepository.getHouseholdLists(_householdId!);
+        } catch (_) {
+          _householdLists = [];
+        }
       } else {
         _householdLists = [];
       }
