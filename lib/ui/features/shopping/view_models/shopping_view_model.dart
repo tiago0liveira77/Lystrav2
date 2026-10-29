@@ -264,11 +264,9 @@ class ShoppingViewModel extends ChangeNotifier {
       );
 
       await _purchaseRecordRepository.createRecord(uid, record);
-      await _entryRepository.resetEntries(uid, _listId,
+      await _entryRepository.clearEntries(uid, _listId,
           householdId: householdId);
-      _entries = _entries
-          .map((e) => e.copyWith(isChecked: false, checkedAt: null))
-          .toList();
+      _entries = [];
       return true;
     } catch (_) {
       _error = 'Erro ao guardar as compras. Tenta novamente.';

@@ -54,7 +54,7 @@ class _ShoppingViewState extends State<ShoppingView> {
       builder: (dialogContext) => AlertDialog(
         title: const Text('Terminar compras'),
         content: const Text(
-            'Marca esta lista como concluída e guarda o histórico?'),
+            'Guarda as compras no histórico e esvazia a lista?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),

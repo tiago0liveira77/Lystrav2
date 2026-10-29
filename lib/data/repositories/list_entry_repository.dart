@@ -97,21 +97,14 @@ class ListEntryRepository {
     _cache[listId]?.removeWhere((e) => e.id == entryId);
   }
 
-  Future<void> resetEntries(String uid, String listId,
+  Future<void> clearEntries(String uid, String listId,
       {String? householdId}) async {
-    // Fetch from Firestore when cache is empty to guarantee a real reset
-    final entries = _cache.containsKey(listId)
-        ? _cache[listId]!
-        : await getEntries(uid, listId, householdId: householdId);
-    final checked = entries.where((e) => e.isChecked).toList();
-    if (checked.isEmpty) return;
-    await Future.wait(checked.map((e) => _firestore.updateDoc(
-          '${_path(uid, listId, householdId: householdId)}/${e.id}',
-          {'isChecked': false, 'checkedAt': null},
-        )));
-    _cache[listId] = entries
-        .map((e) => e.copyWith(isChecked: false, checkedAt: null))
-        .toList();
+    // Query Firestore directly so entries added by other members are removed too
+    final path = _path(uid, listId, householdId: householdId);
+    final snap = await _firestore.getCollection(path);
+    await Future.wait(
+        snap.docs.map((d) => _firestore.deleteDoc('$path/${d.id}')));
+    _cache[listId] = [];
   }
 
   Stream<List<ListEntry>> watchEntries(String uid, String listId,

@@ -429,14 +429,14 @@ class MockListEntryRepository extends _i1.Mock
       ) as _i6.Future<void>);
 
   @override
-  _i6.Future<void> resetEntries(
+  _i6.Future<void> clearEntries(
     String? uid,
     String? listId, {
     String? householdId,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
-          #resetEntries,
+          #clearEntries,
           [
             uid,
             listId,
@@ -521,6 +521,15 @@ class MockUserState extends _i1.Mock implements _i9.UserState {
       ) as _i6.Future<void>);
 
   @override
+  void clear() => super.noSuchMethod(
+        Invocation.method(
+          #clear,
+          [],
+        ),
+        returnValueForMissingStub: null,
+      );
+
+  @override
   void updatePremium(bool? value) => super.noSuchMethod(
         Invocation.method(
           #updatePremium,
@@ -539,9 +548,9 @@ class MockUserState extends _i1.Mock implements _i9.UserState {
       );
 
   @override
-  void clear() => super.noSuchMethod(
+  void dispose() => super.noSuchMethod(
         Invocation.method(
-          #clear,
+          #dispose,
           [],
         ),
         returnValueForMissingStub: null,
@@ -561,15 +570,6 @@ class MockUserState extends _i1.Mock implements _i9.UserState {
         Invocation.method(
           #removeListener,
           [listener],
-        ),
-        returnValueForMissingStub: null,
-      );
-
-  @override
-  void dispose() => super.noSuchMethod(
-        Invocation.method(
-          #dispose,
-          [],
         ),
         returnValueForMissingStub: null,
       );

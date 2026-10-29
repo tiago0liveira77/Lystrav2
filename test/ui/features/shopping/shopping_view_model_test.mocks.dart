@@ -226,14 +226,14 @@ class MockListEntryRepository extends _i1.Mock
       ) as _i9.Future<void>);
 
   @override
-  _i9.Future<void> resetEntries(
+  _i9.Future<void> clearEntries(
     String? uid,
     String? listId, {
     String? householdId,
   }) =>
       (super.noSuchMethod(
         Invocation.method(
-          #resetEntries,
+          #clearEntries,
           [
             uid,
             listId,
